@@ -1,31 +1,8 @@
-#include "GLFW/glfw3.h"
-#include <iostream>
-#include <variant>
-#define SK_GANESH
-#define SK_GL
+#include "Lyric.h"
+#include "LyricParser.h"
+#include "pch.h"
+#include "render/DynamicLyricWordRendererNormal.h"
 
-
-#include "include/gpu/GrBackendSurface.h"
-#include "include/gpu/GrDirectContext.h"
-#include "include/gpu/gl/GrGLAssembleInterface.h"
-#include "include/gpu/gl/GrGLInterface.h"
-
-#include "include/codec/SkCodec.h"
-#include "include/core/SkBitmap.h"
-#include "include/core/SkCanvas.h"
-#include "include/core/SkColorSpace.h"
-#include "include/core/SkData.h"
-#include "include/core/SkFont.h"
-#include "include/core/SkFontMgr.h"
-#include "include/core/SkImage.h"
-#include "include/core/SkMaskFilter.h"
-#include "include/core/SkPath.h"
-#include "include/core/SkSurface.h"
-#include "include/core/SkTextBlob.h"
-#include "include/effects/SkGradientShader.h"
-
-#define GL_FRAMEBUFFER_SRGB 0x8DB9
-#define GL_SRGB8_ALPHA8 0x8C43
 
 static const bool enableLowEffect = false;
 
@@ -78,90 +55,6 @@ void cleanup_skia() {
 const int kWidth = 1032;
 const int kHeight = 670;
 
-struct LyricDynamicWord {
-    std::string word;
-    float start;
-    float end;
-};
-
-struct LyricLine {
-    float start{};
-    float end{};
-
-    bool isDynamic{};
-    std::variant<
-            std::vector<LyricDynamicWord>,
-            std::string>
-            lyric;
-    std::optional<std::string> translation;
-};
-extern std::vector<LyricLine> lines;
-struct LyricRenderDataLine {
-    float minHeight;
-};
-struct LyricRenderData {
-    std::vector<LyricRenderDataLine> lines;
-};
-
-struct DynamicLyricWordRenderer {
-    virtual float renderLyricWord(SkCanvas *canvas,
-                                  float relativeTime,
-                                  const LyricDynamicWord &word,
-                                  float x, float y,
-                                  const SkFont &font, SkPaint &paint1) const = 0;
-    [[nodiscard]] virtual float measureLyricWord(const LyricDynamicWord &word, const SkFont &font) const = 0;
-};
-
-struct DynamicLyricWordRendererNormal : public DynamicLyricWordRenderer {
-    float renderLyricWord(
-            SkCanvas *canvas,
-            float relativeTime,// relative to the lyric line
-            const LyricDynamicWord &word,
-            float x, float y,
-            const SkFont &font,
-            SkPaint &paint1) const override {
-        relativeTime = std::clamp(relativeTime - word.start, 0.f, word.end - word.start);
-        float progress = (relativeTime) / (word.end - word.start);
-
-        y -= (1 - progress) * 4.f - font.getSize();
-
-        paint1.setAntiAlias(true);
-        //  background light
-        //        paint1.setColor(SkColorSetARGB(90, 183, 201, 217));
-        //        paint1.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, 2.f, 2.f));
-
-        // draw background text
-        //        canvas->drawString(word.word.c_str(), x, y, font, paint1);
-
-        // paint with foreground color
-        //        paint1.setMaskFilter(nullptr);
-        paint1.setBlendMode(SkBlendMode::kPlus);
-        paint1.setColor(SkColorSetARGB(90, 255, 255, 255));
-
-        canvas->drawString(word.word.c_str(), x, y, font, paint1);
-
-        paint1.setBlendMode(SkBlendMode::kSrcOver);
-        // paint dynamic word
-
-        const auto textWidth = font.measureText(word.word.c_str(), word.word.size(), SkTextEncoding::kUTF8);
-        // set mask texture
-        SkPoint pts[2] = {{x, 0},
-                          {x + textWidth, 0}};
-        SkColor colors[2] = {SK_ColorWHITE, SK_ColorTRANSPARENT};
-        const auto translate = SkMatrix::Translate(textWidth * (progress * 2 - 1), 0);
-        const auto shader = SkGradientShader::MakeLinear(pts,
-                                                         colors,
-                                                         nullptr, 2, SkTileMode::kClamp, 0, &translate);
-
-        paint1.setShader(shader);
-        canvas->drawString(word.word.c_str(), x, y, font, paint1);
-        return font.measureText(word.word.c_str(), word.word.size(), SkTextEncoding::kUTF8);
-    }
-
-    [[nodiscard]] float measureLyricWord(const LyricDynamicWord &word, const SkFont &font) const override {
-        return font.measureText(word.word.c_str(), word.word.size(), SkTextEncoding::kUTF8);
-    }
-};
 
 #define ANIMATED_FLOAT(name, initVal, step) \
     struct name##_t {                       \
@@ -185,6 +78,8 @@ struct LyricRenderContext {
     ANIMATED_FLOAT(currentLine, 0.f, 0.05f)
 } lyric_ctx;
 
+static const float marginBottom = 20.f;
+
 float renderLyricLine(
         SkCanvas *canvas,
         float relativeTime,
@@ -194,8 +89,11 @@ float renderLyricLine(
         const SkFont &font,
         const SkFont &layoutFont,
         float blur = 0.f) {
-    static const float marginVertical = 10.f;
-    static const float marginHorizontal = 10.f;
+    float marginVertical = 10.f;
+    float marginHorizontal = 0.f;
+
+
+    float height = 0.f;
     static const auto renderer = DynamicLyricWordRendererNormal();
     if (line.isDynamic) {
         float currentX = x;
@@ -209,25 +107,19 @@ float renderLyricLine(
                 currentXLayout = x;
                 currentY += font.getSize() + marginVertical;
             }
-            SkPaint paint1;
-            paint1.setAntiAlias(true);
-            if (blur > 0.f) {
-                paint1.setColor(SkColorSetARGB(90, 183, 201, 217));
-                if (!enableLowEffect) {
-                    paint1.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, blur, blur));
-                }
-            }
 
-            renderer.renderLyricWord(canvas, relativeTime - line.start, word, currentX, currentY, font, paint1);
+            renderer.renderLyricWord(canvas, relativeTime - line.start, word, currentX, currentY, font, blur);
             currentX += wordWidth + marginHorizontal;
             currentXLayout += wordWidthLayout + marginHorizontal;
         }
 
-        return currentY - y + font.getSize() + marginVertical + 20.f;
+        height += currentY - y + font.getSize() + marginVertical + marginBottom;
     } else {
         SkPaint paint;
         canvas->drawString(std::get<1>(line.lyric).c_str(), x, y, font, paint);
     }
+
+    return height;
 }
 
 float estimateLyricLineHeight(
@@ -255,9 +147,9 @@ float estimateLyricLineHeight(
             currentXLayout += wordWidthLayout + marginHorizontal;
         }
 
-        return currentY + font.getSize() + marginVertical;
+        return currentY + font.getSize() + marginVertical + marginBottom;
     } else {
-        return font.getSize() + marginVertical + 20.f;
+        return font.getSize() + marginVertical + marginBottom;
     }
 }
 
@@ -315,6 +207,14 @@ int main() {
     int lastFocusedLine = -1;
     float lastLineHeight = 0.f;
 
+    // read from lyric.txt
+    const auto lyricFile = std::ifstream("lyric.txt");
+    std::stringstream buffer;
+    buffer << lyricFile.rdbuf();
+    const auto lyricStr = buffer.str();
+
+    const auto lines = LyricParser::parse(lyricStr);
+
     float estimatedHeightMap[300];
 
     while (!glfwWindowShouldClose(window)) {
@@ -346,7 +246,7 @@ int main() {
 
         canvas->drawTextBlob(
                 SkTextBlob::MakeFromString(
-                        std::format("FPS: {} Time: {:.2f}", lastFPS, t).c_str(), SkFont(typeface, 20)),
+                        std::format("FPS: {} Time: {:.2f}", lastFPS, t).c_str(), SkFont(typeface, 15)),
                 10, 30, paint);
 
 
@@ -361,7 +261,7 @@ int main() {
             }
         }
 
-        float focusY = 200.f;
+        float focusY = 150.f;
 
         if (focusedLineNum != lastFocusedLine) {
             lastLineHeight = focusedLineNum == 0 ? 0.f : estimatedHeightMap[focusedLineNum - 1];
@@ -381,7 +281,7 @@ int main() {
 
             currentY -= lineHeight;
             renderLyricLine(canvas, t, line, 400.f, currentY, kWidth - 420.f,
-                            SkFont(typeface, fontSize), SkFont(typeface, 60.f), distToFocus * 0.04);
+                            SkFont(typeface, fontSize), SkFont(typeface, 60.f), distToFocus * 0.8);
         }
         currentY = currentFocusedLineY;// pos of current focused line
         for (int x = focusedLineNum; x < lines.size(); x++) {
@@ -391,50 +291,11 @@ int main() {
             }
             const float distToFocus = std::abs(lyric_ctx.currentLine.current - x);
             float lineHeight = renderLyricLine(canvas, t, line, 400.f, currentY, kWidth - 420.f,
-                                               SkFont(typeface, std::clamp(30.f * (2 - distToFocus) / 2 + 30.f, 30.f, 60.f)), SkFont(typeface, 60.f), distToFocus * 0.04);
+                                               SkFont(typeface, std::clamp(30.f * (2 - distToFocus) / 2 + 30.f, 30.f, 60.f)), SkFont(typeface, 60.f), distToFocus * 0.8);
 
             estimatedHeightMap[x] = lineHeight;
             currentY += lineHeight;
         }
-        //        for (int x = 0; x < lines.size(); x++) {
-        //            const auto &line = lines[x];
-        //
-        //            currentY += std::clamp(50.f - std::abs(currentY - focusY), 0.f, 50.f) + 10.f;
-        //            const auto distToFocus = std::abs(currentY - focusY);
-        //            const static float sizeChangeRange = 300.f;
-        //
-        //
-        //            if (x == focusedLineNum) {
-        //                std::cout << (currentY - focusY) << " " << lastFocusedLine << std::endl;
-        //                if (lastFocusedLine != focusedLineNum) {
-        //                    lastFocusedLine = focusedLineNum;
-        //                }
-        //
-        //                lyric_ctx.offsetY.target = lyric_ctx.offsetY.current - currentY + focusY;
-        //            }
-        //
-        //            if (currentY < -200 && estimatedHeightMap[x]) {
-        //                currentY += estimatedHeightMap[x];
-        //                continue;
-        //            }
-        //            float lineHeightEstimated =
-        //                    estimateLyricLineHeight(line, kWidth - 20.f,
-        //                                            SkFont(typeface, std::clamp(30.f * (1 - distToFocus / sizeChangeRange) + 30.f, 30.f, 60.f)),
-        //                                            SkFont(typeface, 60.f));
-        //            estimatedHeightMap[x] = lineHeightEstimated;
-        //
-        //
-        //            if (lineHeightEstimated + currentY < 0) {
-        //                currentY += lineHeightEstimated;
-        //                continue;
-        //            }
-        //
-        //            if (currentY > kHeight) break;
-        //
-        //                    float lineHeight = renderLyricLine(canvas, t, line, 400.f, currentY, kWidth - 20.f,
-        //                                                       SkFont(typeface, std::clamp(30.f * (1 - distToFocus / sizeChangeRange) + 30.f, 30.f, 60.f)), SkFont(typeface, 60.f), distToFocus * 0.01);
-        //                    currentY += lineHeight;
-        //        }
 
         sContext->flush();
 

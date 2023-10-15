@@ -5,18 +5,24 @@
 #ifndef CORE_LYRICPARSER_H
 #define CORE_LYRICPARSER_H
 
+#include "pch.h"
+
+#include "Lyric.h"
+
 
 /**
  * 歌词解析器
  *
  * 歌词格式（动态）：
- * (绝对毫秒时间)词,(绝对毫秒时间)词,(绝对毫秒时间)词
- * (绝对毫秒时间)词,(绝对毫秒时间)词,(绝对毫秒时间)词
+ * (绝对毫秒时间:绝对毫秒结束时间)词`(绝对毫秒时间:绝对毫秒结束时间)词`(绝对毫秒时间:绝对毫秒结束时间)词[|第二歌词|第三歌词]
+ * (绝对毫秒时间:绝对毫秒结束时间)词`(绝对毫秒时间:绝对毫秒结束时间)词`(绝对毫秒时间:绝对毫秒结束时间)词[|第二歌词|第三歌词]
  *
  * 歌词格式（静态）：
- * (绝对毫秒时间)句子
+ * (绝对毫秒时间:绝对毫秒结束时间)句子
  */
 class LyricParser {
+public:
+    static std::vector<LyricLine> parse(const std::string &lyric);
 };
 
 
