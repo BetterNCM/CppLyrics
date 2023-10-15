@@ -5,7 +5,9 @@
 #ifndef CORE_LYRIC_H
 #define CORE_LYRIC_H
 
-#include "pch.h"
+#include <string>
+#include <variant>
+#include <vector>
 
 struct LyricDynamicWord {
     std::string word;

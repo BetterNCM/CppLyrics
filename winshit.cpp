@@ -3,10 +3,41 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
+#include "LyricParser.h"
+
+#include <fstream>
+#include <memory>
+#include <sstream>
+#include <thread>
+
+extern std::shared_ptr<std::vector<LyricLine>> _lines_ref;
+extern std::atomic<float> currentTimeExt;
 
 int initCppLyrics();
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow) {
-    return initCppLyrics();
+int main() {
+    std::thread([]() {
+        // sleep 1000ms
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+        {
+            const auto lyricFile = std::ifstream("../lyric.txt");
+            std::stringstream buffer;
+            buffer << lyricFile.rdbuf();
+            const auto lyricStr = buffer.str();
+            *_lines_ref = LyricParser::parse(lyricStr);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+        {
+            const auto lyricFile = std::ifstream("../lyric2.txt");
+            std::stringstream buffer;
+            buffer << lyricFile.rdbuf();
+            const auto lyricStr = buffer.str();
+            *_lines_ref = LyricParser::parse(lyricStr);
+            currentTimeExt.exchange(0.f);
+        }
+    }).detach();
+    initCppLyrics();
 }
 
 void processWindow(GLFWwindow *win) {

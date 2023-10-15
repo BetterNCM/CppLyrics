@@ -53,8 +53,8 @@ void cleanup_skia() {
     delete sContext;
 }
 
-int kWidth = 1032;
-int kHeight = 670;
+int kWidth = 590;
+int kHeight = 840;
 
 
 #define ANIMATED_FLOAT(name, initVal, step) \
@@ -176,6 +176,11 @@ float estimateLyricLineHeight(
     return currentY + marginBottom;
 }
 
+// TODO: thread safety is not guaranteed, change later
+std::shared_ptr<std::vector<LyricLine>> _lines_ref = std::make_shared<std::vector<LyricLine>>();
+std::atomic<float> currentTimeExt = -1.f;
+std::atomic<bool> isPaused = false;
+
 int initCppLyrics() {
     GLFWwindow *window;
     glfwSetErrorCallback(error_callback);
@@ -189,10 +194,10 @@ int initCppLyrics() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     //  glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
 
-    glfwWindowHint(GLFW_RESIZABLE, 1);
+    glfwWindowHint(GLFW_RESIZABLE, 0);
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, 1);
 
-    window = glfwCreateWindow(kWidth, kHeight, "C++ Lyrics Sample APP", NULL, NULL);
+    window = glfwCreateWindow(kWidth, kHeight, "C++ Lyrics", NULL, NULL);
 //    while (!glfwWindowShouldClose(window)) {
 //        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 //        glClear(GL_COLOR_BUFFER_BIT);
@@ -225,7 +230,7 @@ int initCppLyrics() {
     }
     glfwMakeContextCurrent(window);
 
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
 
     init_skia(kWidth, kHeight);
 
@@ -247,26 +252,27 @@ int initCppLyrics() {
             SkFontStyle::Bold()));
 
     // load ./bg.png
-    auto data = SkData::MakeFromFileName("bg.png");
-    auto pic = SkImage::MakeFromEncoded(data);
+    //    auto data = SkData::MakeFromFileName("bg.png");
+    //    auto pic = SkImage::MakeFromEncoded(data);
     double lastTimeFrame = glfwGetTime();
 
     int lastFocusedLine = -1;
     float lastLineHeight = 0.f;
 
-    // read from lyric.txt
-    const auto lyricFile = std::ifstream("lyric.txt");
-    std::stringstream buffer;
-    buffer << lyricFile.rdbuf();
-    const auto lyricStr = buffer.str();
-
-    const auto lines = LyricParser::parse(lyricStr);
 
     float estimatedHeightMap[500];
 
     while (!glfwWindowShouldClose(window)) {
-        //        glfwGetWindowSize(window, &kWidth, &kHeight);
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        const auto lines = *_lines_ref;
+
+        if (lines.size() == 0) {
+            glfwPollEvents();
+            continue;
+        }
+
+        glfwGetWindowSize(window, &kWidth, &kHeight);
+        // glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClearColor(54 / 255.f, 52 / 255.f, 57 / 255.f, 255 / 255.f);
         glClear(GL_COLOR_BUFFER_BIT);
         // Measure fps
         double currentTime = glfwGetTime();
@@ -288,7 +294,7 @@ int initCppLyrics() {
         glfwPollEvents();
 
         SkPaint paint;
-        paint.setColor(SK_ColorTRANSPARENT);
+        paint.setColor(SkColorSetARGB(240, 54, 52, 57));
         paint.setBlendMode(SkBlendMode::kSrc);
         canvas->drawPaint(paint);
         //        canvas->drawImage(
@@ -300,7 +306,7 @@ int initCppLyrics() {
                 10, 30, paint);
 
 
-        int focusedLineNum = lines.size() - 1;
+        int focusedLineNum = lines.size();
         for (int i = 0; i < lines.size() - 1; i++) {
             const auto &line = lines[i];
             const auto &nextLine = lines[i + 1];
@@ -312,6 +318,7 @@ int initCppLyrics() {
         }
 
         float focusY = 150.f;
+        constexpr float X = 10.f;
 
         if (focusedLineNum != lastFocusedLine) {
             lastLineHeight = focusedLineNum == 0 ? 0.f : estimatedHeightMap[focusedLineNum - 1];
@@ -326,13 +333,13 @@ int initCppLyrics() {
             const auto &line = lines[x];
             const float distToFocus = std::abs(lyric_ctx.currentLine.current - x);
             const float fontSize = std::clamp(30.f * (2 - distToFocus) / 2 + 30.f, 30.f, 60.f);
-            float lineHeight = estimateLyricLineHeight(line, kWidth - 420.f,
+            float lineHeight = estimateLyricLineHeight(line, kWidth - X - 10.f,
                                                        SkFont(typeface, fontSize),
                                                        SkFont(typeface, 60.f),
                                                        SkFont(typeface, 30.f));
 
             currentY -= lineHeight;
-            renderLyricLine(canvas, t, line, 400.f, currentY, kWidth - 420.f,
+            renderLyricLine(canvas, t, line, X, currentY, kWidth - X - 10.f,
                             SkFont(typeface, fontSize), SkFont(typeface, 60.f),
                             SkFont(typeface, 30.f), distToFocus * 0.8);
         }
@@ -343,7 +350,7 @@ int initCppLyrics() {
                 break;
             }
             const float distToFocus = std::abs(lyric_ctx.currentLine.current - x);
-            float lineHeight = renderLyricLine(canvas, t, line, 400.f, currentY, kWidth - 420.f,
+            float lineHeight = renderLyricLine(canvas, t, line, X, currentY, kWidth - X - 10.f,
                                                SkFont(typeface, std::clamp(30.f * (2 - distToFocus) / 2 + 30.f, 30.f, 60.f)), SkFont(typeface, 60.f),
                                                SkFont(typeface, 30.f), distToFocus * 0.8);
 
@@ -353,15 +360,22 @@ int initCppLyrics() {
 
         sContext->flush();
 
-        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-            t += 140.f * framePassed;
-        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-            t -= 140.f * framePassed;
+        if (currentTimeExt > 0) {
+            t = currentTimeExt;
+            currentTimeExt = -1.f;
+        } else {
 
-        if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
-            t = 0.f;
+            if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+                t += 140.f * framePassed;
+            if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+                t -= 140.f * framePassed;
 
-        t += deltaTime;
+            if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
+                t = 0.f;
+
+            if (!isPaused)
+                t += deltaTime;
+        }
 
         // animate ctx
 
