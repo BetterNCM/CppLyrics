@@ -28,7 +28,7 @@ struct DynamicLyricWordRendererNormal : public DynamicLyricWordRenderer {
 
         //  background light
         paintBg.setColor(SkColorSetARGB(30, 183, 201, 217));
-        paintBg.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, 10.f, 12.f));
+        paintBg.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, 10.f, true));
 
         // draw background text glow
         canvas->drawString(word.word.c_str(), x + 2.f, y + 3.f, font, paintBg);

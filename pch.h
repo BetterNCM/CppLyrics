@@ -12,8 +12,9 @@
 #define SK_GANESH
 #define SK_GL
 
-#define GL_FRAMEBUFFER_SRGB 0x8DB9
-#define GL_SRGB8_ALPHA8 0x8C43
+
+//#define GL_FRAMEBUFFER_SRGB 0x8DB9
+//#define GL_SRGB8_ALPHA8 0x8C43
 
 #include "include/gpu/GrBackendSurface.h"
 #include "include/gpu/GrDirectContext.h"

@@ -9,7 +9,7 @@ static const bool enableLowEffect = false;
 
 GrDirectContext *sContext = nullptr;
 SkSurface *sSurface = nullptr;
-
+GrBackendRenderTarget backendRenderTarget;
 #define drawHorizontalLineAt(y, color)               \
     {                                                \
         SkPaint ___paint;                            \
@@ -39,10 +39,10 @@ void init_skia(int w, int h) {
     framebufferInfo.fFormat = GL_RGBA8;
 
     SkColorType colorType = kRGBA_8888_SkColorType;
-    GrBackendRenderTarget backendRenderTarget = GrBackendRenderTarget(w, h,
-                                                                      0,// sample count
-                                                                      0,// stencil bits
-                                                                      framebufferInfo);
+    backendRenderTarget = GrBackendRenderTarget(w, h,
+                                                0,// sample count
+                                                0,// stencil bits
+                                                framebufferInfo);
 
     sSurface = SkSurface::MakeFromBackendRenderTarget(sContext, backendRenderTarget, kBottomLeft_GrSurfaceOrigin, colorType, SkColorSpace::MakeSRGB(), nullptr).release();
     if (sSurface == nullptr) abort();
@@ -53,8 +53,8 @@ void cleanup_skia() {
     delete sContext;
 }
 
-const int kWidth = 1032;
-const int kHeight = 670;
+int kWidth = 1032;
+int kHeight = 670;
 
 
 #define ANIMATED_FLOAT(name, initVal, step) \
@@ -185,15 +185,40 @@ int main() {
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    //   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
-    glfwWindowHint(GLFW_STENCIL_BITS, 0);
-    glfwWindowHint(GLFW_ALPHA_BITS, 0);
-    glfwWindowHint(GLFW_DEPTH_BITS, 0);
-    //glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
+    //  glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
+
+    glfwWindowHint(GLFW_RESIZABLE, 1);
+    glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, 1);
 
     window = glfwCreateWindow(kWidth, kHeight, "C++ Lyrics Sample APP", NULL, NULL);
+//    while (!glfwWindowShouldClose(window)) {
+//        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+//        glClear(GL_COLOR_BUFFER_BIT);
+//        glBegin(GL_QUADS);
+//        glColor3f(0, 0, 1);
+//        glVertex3f(-0.5, -0.5, -1);
+//        glColor3f(0, 1, 0);
+//        glVertex3f(0.5, -0.5, -1);
+//        glColor3f(1, 0, 1);
+//        glVertex3f(0.5, 0.5, -1);
+//        glColor3f(1, 1, 0);
+//        glVertex3f(-0.5, 0.5, -1);
+//        glEnd();
+//
+//        // swap front and back buffers
+//        glfwSwapBuffers(window);
+//
+//        // poll for and process events
+//        glfwPollEvents();
+//    }
+#ifdef _WIN32
+    void processWindow(GLFWwindow * hwnd);
+    // processWindow(window);
+#endif
+
+
     if (!window) {
         glfwTerminate();
         exit(EXIT_FAILURE);
@@ -208,7 +233,6 @@ int main() {
 
     // Draw to the surface via its SkCanvas.
     SkCanvas *canvas = sSurface->getCanvas();// We don't manage this pointer's lifetime.
-
 
     float t = 0.f;
     // calc framerate
@@ -238,9 +262,12 @@ int main() {
 
     const auto lines = LyricParser::parse(lyricStr);
 
-    float estimatedHeightMap[300];
+    float estimatedHeightMap[500];
 
     while (!glfwWindowShouldClose(window)) {
+        //        glfwGetWindowSize(window, &kWidth, &kHeight);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
         // Measure fps
         double currentTime = glfwGetTime();
         nbFrames++;
@@ -261,11 +288,11 @@ int main() {
         glfwPollEvents();
 
         SkPaint paint;
-        paint.setColor(SK_ColorWHITE);
+        paint.setColor(SK_ColorTRANSPARENT);
+        paint.setBlendMode(SkBlendMode::kSrc);
         canvas->drawPaint(paint);
-        paint.setColor(SK_ColorWHITE);
-        canvas->drawImage(
-                pic, 0, 0);
+        //        canvas->drawImage(
+        //                pic, 0, 0);
 
         canvas->drawTextBlob(
                 SkTextBlob::MakeFromString(
@@ -352,7 +379,6 @@ int main() {
 
         DO_ANIMATE_FLOAT_HALF(offsetY);
         DO_ANIMATE_FLOAT_EASE_IN_OUT(currentLine);
-
         glfwSwapBuffers(window);
     }
 
