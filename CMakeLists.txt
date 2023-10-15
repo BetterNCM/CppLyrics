@@ -17,6 +17,9 @@ add_executable(core main.cpp
         Utils.h
         render/DynamicLyricWordRenderer.h
         render/DynamicLyricWordRendererNormal.h
+        external/utf8.cpp
+        external/utf8.h
+        render/RenderTextWrap.h
 )
 target_compile_options(core PUBLIC /MT)
 target_link_directories(core PUBLIC external/skia/out/Release-x64 external/glfw64/lib-static-ucrt/)

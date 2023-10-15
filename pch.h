@@ -34,4 +34,7 @@
 #include "include/core/SkTextBlob.h"
 #include "include/effects/SkGradientShader.h"
 
+#include "modules/skparagraph/include/Paragraph.h"
+#include "modules/skparagraph/include/ParagraphBuilder.h"
+
 #endif//CORE_PCH_H
