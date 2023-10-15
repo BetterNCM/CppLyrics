@@ -8,7 +8,10 @@ set(CMAKE_CXX_STANDARD 23)
 
 # use skia .lib
 add_executable(core main.cpp
-        winshit.cpp)
+        winshit.cpp
+        LyricParser.cpp
+        LyricParser.h
+        external/Lyric.h)
 target_compile_options(core PUBLIC /MT)
 target_link_directories(core PUBLIC external/skia/out/Release-x64 external/glfw64/lib-static-ucrt/)
 target_link_libraries(core PUBLIC skia opengl32 glfw3dll)
