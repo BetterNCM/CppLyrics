@@ -176,7 +176,7 @@ float estimateLyricLineHeight(
     return currentY + marginBottom;
 }
 
-int main() {
+int initCppLyrics() {
     GLFWwindow *window;
     glfwSetErrorCallback(error_callback);
     if (!glfwInit()) {

@@ -4,13 +4,17 @@
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
 
-int main();
+int initCppLyrics();
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow) {
-    return main();
+    return initCppLyrics();
 }
 
 void processWindow(GLFWwindow *win) {
     HWND hwnd = glfwGetWin32Window(win);
+
+    // win10 acrylic effect
+
+
     // set window to frameless and parent to ncm win
 
     // frameless
