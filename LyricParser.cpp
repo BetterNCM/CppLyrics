@@ -56,7 +56,7 @@ std::vector<LyricLine> LyricParser::parse(const std::string &lyric) {
                         state = 'l';
                         lyricWord.word = word;
                         lyricWord.start = std::stof(timeStart) - lineStartTime;
-                        lyricWord.end = std::stof(timeEnd) - lineStartTime;
+                        lyricWord.end = std::stof(timeEnd) - lineStartTime + 1;
 
                         word = "";
                         timeStart = "";

@@ -26,7 +26,7 @@ float renderTextWithWrap(SkCanvas &canvas, const SkPaint &paint, const SkFont &f
             dy += font.getSize();
         }
         canvas.drawSimpleText(c, strlen(c), SkTextEncoding::kUTF8, x + dx, y + dy, font, paint);
-        dx += boundsNormal.width() * 1.1;
+        dx += boundsNormal.width() + font.getSize() * 0.13;
     }
 
     return dy + font.getSize();
@@ -39,6 +39,7 @@ float measureTextWithWrap(const SkFont &font, const SkFont &layoutFont, float ma
     utf8_init(&iter, text.c_str());
     while (utf8_next(&iter)) {
         const char *c = utf8_getchar(&iter);
+        const bool isPunctuation = c[0] == '.' || c[0] == ',' || strcmp(c, "\uFF0C");
         SkRect bounds;
         layoutFont.measureText(c, strlen(c), SkTextEncoding::kUTF8, &bounds);
         SkRect boundsNormal;
@@ -47,7 +48,7 @@ float measureTextWithWrap(const SkFont &font, const SkFont &layoutFont, float ma
             dx = 0;
             dy += font.getSize();
         }
-        dx += boundsNormal.width() * 1.1;
+        dx += boundsNormal.width() + font.getSize() * 0.13;
     }
 
     return dy + font.getSize();

@@ -15,18 +15,21 @@ extern std::atomic<float> currentTimeExt;
 
 int initCppLyrics();
 int main() {
+    // set self to high priority
+    SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+
     std::thread([]() {
         // sleep 1000ms
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-        {
-            const auto lyricFile = std::ifstream("../lyric.txt");
-            std::stringstream buffer;
-            buffer << lyricFile.rdbuf();
-            const auto lyricStr = buffer.str();
-            *_lines_ref = LyricParser::parse(lyricStr);
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+        //        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        //
+        //        {
+        //            const auto lyricFile = std::ifstream("../lyric.txt");
+        //            std::stringstream buffer;
+        //            buffer << lyricFile.rdbuf();
+        //            const auto lyricStr = buffer.str();
+        //            *_lines_ref = LyricParser::parse(lyricStr);
+        //        }
+        //        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
         {
             const auto lyricFile = std::ifstream("../lyric2.txt");

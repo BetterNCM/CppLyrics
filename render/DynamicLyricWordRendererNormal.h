@@ -27,11 +27,10 @@ struct DynamicLyricWordRendererNormal : public DynamicLyricWordRenderer {
         paintBg.setAntiAlias(true);
 
         //  background light
-        paintBg.setColor(SkColorSetARGB(30, 183, 201, 217));
-        paintBg.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, 10.f, true));
+        //        paintBg.setColor(SkColorSetARGB(30, 183, 201, 217));
+        //        paintBg.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, 10.f, true));
+        //        canvas->drawString(word.word.c_str(), x + 2.f, y + 3.f, font, paintBg);
 
-        // draw background text glow
-        canvas->drawString(word.word.c_str(), x + 2.f, y + 3.f, font, paintBg);
         if (blur > 0.f) {
             paintBg.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, blur, blur));
             paint1.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, blur, blur));
