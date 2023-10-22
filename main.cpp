@@ -229,7 +229,7 @@ void renderSongInfo(SkCanvas &canvas, SkFont font, SkFont fontMinorInfo, bool sm
 
     if (smallMode) {
         songInfoX = dx + dw + 20.f;
-        songInfoY = dy + dh / 2.f;
+        songInfoY = dy + dh / 2.f + 10.f;
     }
 
     paint = SkPaint();
@@ -238,7 +238,7 @@ void renderSongInfo(SkCanvas &canvas, SkFont font, SkFont fontMinorInfo, bool sm
     paint.setBlendMode(SkBlendMode::kPlus);
     canvas.drawString(songName.load()->c_str(), songInfoX, songInfoY, font, paint);
 
-    songInfoY += font.getSize() + (smallMode ? -30.f : -20.f);
+    songInfoY += font.getSize() + (smallMode ? -10.f : -20.f);
     paint.setColor(SkColorSetARGB(80, 255, 255, 255));
     canvas.drawString(songArtist.load()->c_str(), songInfoX, songInfoY, fontMinorInfo, paint);
 }
