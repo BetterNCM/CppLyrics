@@ -1,5 +1,7 @@
 # CppLyrics
 
+纯 C++ & Skia 自绘的动态歌词组件
+
 ⚠ 开发中 ⚠
 
 ⚠ WIP ⚠
