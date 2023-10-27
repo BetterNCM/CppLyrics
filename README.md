@@ -8,8 +8,8 @@
 
 ---------------------
 
-![image](https://github.com/BetterNCM/CppLyrics/assets/66859419/3352e575-e40c-4c3b-ac87-2c89a868cd55)
+![image](https://github.com/BetterNCM/CppLyrics/assets/66859419/5cc32d56-a5c6-4691-8718-4610d6e15956)
 
-![image](https://github.com/BetterNCM/CppLyrics/assets/66859419/f219eabb-0990-41e6-8987-714514460b03)
+![image](https://github.com/BetterNCM/CppLyrics/assets/66859419/08cf3c06-7b9c-4c61-afca-bb097cdb71be)
 
-![image](https://github.com/BetterNCM/CppLyrics/assets/66859419/9acb0d9a-db9a-4b59-b25b-40489bf2df0c)
+![image](https://github.com/BetterNCM/CppLyrics/assets/66859419/fcdf214f-4306-4fc1-800c-fe2b713e6c4a)
