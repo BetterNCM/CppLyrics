@@ -38,11 +38,13 @@ struct DynamicLyricWordRendererNormal : public DynamicLyricWordRenderer {
             paintBg.setMaskFilter(nullptr);
         }
 
-
         // paint background text
         paintBg.setBlendMode(SkBlendMode::kPlus);
         paintBg.setColor(SkColorSetARGB(90, 255, 255, 255));
-        canvas->drawString(word.word.c_str(), x, y, font, paintBg);
+
+        sk_sp<SkTextBlob> textBlob = SkTextBlob::MakeFromString(word.word.c_str(), font);
+
+        canvas->drawTextBlob(textBlob, x, y, paintBg);
 
         // paint dynamic word progress
         const auto textWidth = font.measureText(word.word.c_str(), word.word.size(), SkTextEncoding::kUTF8);
@@ -58,7 +60,7 @@ struct DynamicLyricWordRendererNormal : public DynamicLyricWordRenderer {
 
         paint1.setAntiAlias(true);
         paint1.setShader(shader);
-        canvas->drawString(word.word.c_str(), x, y, font, paint1);
+        canvas->drawTextBlob(textBlob, x, y, paint1);
 
         return font.measureText(word.word.c_str(), word.word.size(), SkTextEncoding::kUTF8);
     }

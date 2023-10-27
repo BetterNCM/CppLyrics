@@ -189,7 +189,32 @@ std::atomic<std::array<float, 3> *> songColor2 = nullptr;
 
 sk_sp<SkImage> songCover = nullptr;
 
-void renderSongInfo(SkCanvas &canvas, SkFont font, SkFont fontMinorInfo, bool smallMode) {
+float t = 0.f;
+float fluidTime = 0.f;
+
+void renderScrollingString(SkCanvas &canvas, SkFont &font, SkPaint &paint, int maxWidth, float t, int x, int y, const char *text) {
+    const auto textWidth = font.measureText(text, strlen(text), SkTextEncoding::kUTF8);
+    if (textWidth > maxWidth) {
+        // double render, scroll
+        const float fontSize = font.getSize();
+        const auto scrollCycle = 40000.f;//ms
+        const auto padding = 0.5f * fontSize;
+        const auto scrollWidth = textWidth + padding * 2.f;
+
+        const auto currentProgress = t / scrollCycle;
+        /* 70% time stop, 30% time scrolling */
+        const auto scrollProgress = std::clamp((currentProgress - 0.6f) / 0.4f, 0.f, 1.f);
+        const auto scrollX = -scrollWidth * scrollProgress;
+
+        font.setSubpixel(true);
+        canvas.drawString(text, x + scrollX, y, font, paint);
+        canvas.drawString(text, x + scrollX + scrollWidth, y, font, paint);
+    } else {
+        canvas.drawString(text, x, y, font, paint);
+    }
+}
+
+void renderSongInfo(SkCanvas &canvas, SkFont font, SkFont fontMinorInfo, bool smallMode, int maxWidth) {
     if (songCover == nullptr) return;
     const auto pic = songCover;
     float dx = kWidth / 6 - 100, dy = std::max(kHeight / 2 - 300, 100), dw = std::max(std::clamp(kWidth / 4.f, 200.f, 400.f), std::clamp(kHeight / 4.f, 200.f, 400.f)),
@@ -207,7 +232,7 @@ void renderSongInfo(SkCanvas &canvas, SkFont font, SkFont fontMinorInfo, bool sm
     // draw background glow
     SkPaint paint;
     paint.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, 20.f, true));
-    paint.setColor(SkColorSetARGB(0x60, 0xFF, 0xFF, 0xFF));
+    paint.setColor(SkColorSetARGB(0x60, (int) (*songColor1).at(0), (int) (*songColor1).at(1), (int) (*songColor1).at(2)));
     canvas.drawPath(path, paint);
 
     // draw image
@@ -229,18 +254,36 @@ void renderSongInfo(SkCanvas &canvas, SkFont font, SkFont fontMinorInfo, bool sm
 
     if (smallMode) {
         songInfoX = dx + dw + 20.f;
-        songInfoY = dy + dh / 2.f + 10.f;
+        songInfoY = dy + dh / 2.f + 5.f;
     }
 
-    paint = SkPaint();
-    paint.setAntiAlias(true);
-    paint.setColor(SkColorSetARGB(170, 255, 255, 255));
-    paint.setBlendMode(SkBlendMode::kPlus);
-    canvas.drawString(songName.load()->c_str(), songInfoX, songInfoY, font, paint);
+    float songInfoWidth = maxWidth - songInfoX;
+    if (smallMode) {
+        songInfoWidth = kWidth - songInfoX;
+    }
 
-    songInfoY += font.getSize() + (smallMode ? -10.f : -20.f);
+    constexpr float songInfoPadding = 10.f;
+    paint = SkPaint();
+
+    SkPoint pts[2] = {{songInfoX + songInfoWidth * -0.05f, 0},
+                      {songInfoX + songInfoWidth * 1.05f, 0}};
+    SkColor colors[4] = {SkColorSetARGB(0, 255, 255, 255),
+                         SkColorSetARGB(170, 255, 255, 255),
+                         SkColorSetARGB(170, 255, 255, 255),
+                         SkColorSetARGB(0, 255, 255, 255)};
+    SkScalar pos[4] = {0.f, 0.05f / 1.1f, 1.05f / 1.1f, 1.f};
+    const auto shader = SkGradientShader::MakeLinear(pts,
+                                                     colors,
+                                                     pos, 4, SkTileMode::kClamp);
+
+    paint.setAntiAlias(true);
+    paint.setShader(shader);
+    paint.setBlendMode(SkBlendMode::kPlus);
+    renderScrollingString(canvas, font, paint, songInfoWidth, fluidTime, songInfoX, songInfoY, songName.load()->c_str());
+
+    songInfoY += font.getSize() + (smallMode ? -20.f : -20.f);
     paint.setColor(SkColorSetARGB(80, 255, 255, 255));
-    canvas.drawString(songArtist.load()->c_str(), songInfoX, songInfoY, fontMinorInfo, paint);
+    renderScrollingString(canvas, fontMinorInfo, paint, songInfoWidth, fluidTime, songInfoX, songInfoY, songArtist.load()->c_str());
 }
 
 int initCppLyrics() {
@@ -311,8 +354,6 @@ int initCppLyrics() {
     });
 
 
-    float t = 0.f;
-    float fluidTime = 0.f;
     // calc framerate
     double lastTime = glfwGetTime();
     int nbFrames = 0;
@@ -425,7 +466,7 @@ float cnoise(vec3 P){
 }
 half4 main(vec2 fragCoord)
 {
-    vec2 uv = 3 * fragCoord.xy / vec2(max(iResolution.x, iResolution.y));
+    vec2 uv = 2.4 * fragCoord.xy / vec2(max(iResolution.x, iResolution.y));
 
     float p = cnoise(vec3(iTime, uv.x, uv.y));
 
@@ -526,7 +567,8 @@ half4 main(vec2 fragCoord)
             lastFocusedLine = focusedLineNum;
         }
 
-        renderSongInfo(*canvas, SkFont(typefaceBold, 60.f), SkFont(typefaceMed, 30.f), smallMode);
+        renderSongInfo(*canvas, SkFont(typefaceBold, 60.f), SkFont(typefaceMed, 30.f), smallMode,
+                       smallMode ? kWidth - 20.f : kWidth / 2 - 100.f);
 
         float currentFocusedLineY = focusY + (focusedLineNum - lyric_ctx.currentLine.current) * lastLineHeight;
         float currentY = currentFocusedLineY;// pos of last focused line

@@ -1,9 +1,12 @@
+#define NOMINMAX
 #include <windows.h>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
 #include "LyricParser.h"
+#include "core/SkData.h"
+#include "core/SkImage.h"
 
 #include <fstream>
 #include <memory>
@@ -12,6 +15,12 @@
 
 extern std::shared_ptr<std::vector<LyricLine>> _lines_ref;
 extern std::atomic<float> currentTimeExt;
+extern std::atomic<bool> isPaused;
+extern std::atomic<std::shared_ptr<std::string>> songName;
+extern std::atomic<std::shared_ptr<std::string>> songArtist;
+extern std::atomic<std::array<float, 3> *> songColor1;
+extern std::atomic<std::array<float, 3> *> songColor2;
+extern sk_sp<SkImage> songCover;
 
 int initCppLyrics();
 int main() {
@@ -38,6 +47,12 @@ int main() {
             const auto lyricStr = buffer.str();
             *_lines_ref = LyricParser::parse(lyricStr);
             currentTimeExt.exchange(0.f);
+
+            songName.exchange(std::make_shared<std::string>("song name877878787787887878787887"));
+            songArtist.exchange(std::make_shared<std::string>("song artist"));
+            songColor1.exchange(new std::array<float, 3>{0, 52, 77});
+            songColor2.exchange(new std::array<float, 3>{4, 54, 56});
+            songCover = SkImage::MakeFromEncoded(SkData::MakeFromFileName("../cover.jpg"));
         }
     }).detach();
     initCppLyrics();
