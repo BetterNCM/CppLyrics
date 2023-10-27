@@ -214,7 +214,7 @@ void renderScrollingString(SkCanvas &canvas, SkFont &font, SkPaint &paint, int m
     }
 }
 
-void renderSongInfo(SkCanvas &canvas, SkFont font, SkFont fontMinorInfo, bool smallMode, int maxWidth) {
+void renderSongInfo(SkCanvas &canvas, SkFont &font, SkFont &fontMinorInfo, bool smallMode, int maxWidth) {
     if (songCover == nullptr) return;
     const auto pic = songCover;
     float dx = kWidth / 6 - 100, dy = std::max(kHeight / 2 - 300, 100), dw = std::max(std::clamp(kWidth / 4.f, 200.f, 400.f), std::clamp(kHeight / 4.f, 200.f, 400.f)),
@@ -286,9 +286,11 @@ void renderSongInfo(SkCanvas &canvas, SkFont font, SkFont fontMinorInfo, bool sm
     renderScrollingString(canvas, fontMinorInfo, paint, songInfoWidth, fluidTime, songInfoX, songInfoY, songArtist.load()->c_str());
 }
 
+
 int initCppLyrics() {
     GLFWwindow *window;
     glfwSetErrorCallback(error_callback);
+    bool enableDblBuffer = false;
     if (!glfwInit()) {
         exit(EXIT_FAILURE);
     }
@@ -299,7 +301,7 @@ int initCppLyrics() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     //  glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
     // disable double buffer
-    glfwWindowHint(GLFW_DOUBLEBUFFER, 0);
+    glfwWindowHint(GLFW_DOUBLEBUFFER, enableDblBuffer);
 
     glfwWindowHint(GLFW_RESIZABLE, 1);
     //    glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, 1);
@@ -337,7 +339,8 @@ int initCppLyrics() {
     }
     glfwMakeContextCurrent(window);
 
-    glfwSwapInterval(0);
+    if (!enableDblBuffer)
+        glfwSwapInterval(0);
 
     init_skia(kWidth, kHeight);
 
@@ -494,7 +497,7 @@ half4 main(vec2 fragCoord)
         double currentTime = glfwGetTime();
         nbFrames++;
 
-        if (currentTime - lastTime >= 2) {
+        if (currentTime - lastTime >= .3) {
             lastFPS = nbFrames / (currentTime - lastTime);
             nbFrames = 0;
             lastTime = currentTime;
@@ -567,7 +570,10 @@ half4 main(vec2 fragCoord)
             lastFocusedLine = focusedLineNum;
         }
 
-        renderSongInfo(*canvas, SkFont(typefaceBold, 60.f), SkFont(typefaceMed, 30.f), smallMode,
+        static auto boldFont = SkFont(typefaceBold, 60.f);
+        static auto midFont = SkFont(typefaceMed, 30.f);
+
+        renderSongInfo(*canvas, boldFont, midFont, smallMode,
                        smallMode ? kWidth - 20.f : kWidth / 2 - 100.f);
 
         float currentFocusedLineY = focusY + (focusedLineNum - lyric_ctx.currentLine.current) * lastLineHeight;
@@ -575,7 +581,8 @@ half4 main(vec2 fragCoord)
 
 
         const static float minTextSize = 40.f, maxTextSize = 60.f;
-
+        static auto subLyricFont = SkFont(typefaceBold, 30.f);
+        static auto layoutFont = SkFont(typefaceBold, maxTextSize);
         if (!smallMode)
             for (int x = focusedLineNum - 1; x >= 0; x--) {
                 if (currentY < 0) break;
@@ -584,13 +591,13 @@ half4 main(vec2 fragCoord)
                 const float fontSize = std::clamp((maxTextSize - minTextSize) * (2 - distToFocus) / 2 + minTextSize, minTextSize, maxTextSize);
                 float lineHeight = estimateLyricLineHeight(line, kWidth - X - 10.f,
                                                            SkFont(typefaceBold, fontSize),
-                                                           SkFont(typefaceBold, 60.f),
-                                                           SkFont(typefaceBold, 30.f));
+                                                           layoutFont,
+                                                           subLyricFont);
 
                 currentY -= lineHeight;
                 renderLyricLine(canvas, t, line, X, currentY, kWidth - X - 10.f,
-                                SkFont(typefaceBold, fontSize), SkFont(typefaceBold, maxTextSize),
-                                SkFont(typefaceBold, 30.f), 0);
+                                SkFont(typefaceBold, fontSize), layoutFont,
+                                subLyricFont, 0);
             }
 
         currentY = currentFocusedLineY;// pos of current focused line
@@ -603,8 +610,8 @@ half4 main(vec2 fragCoord)
             const float fontSize = std::clamp((maxTextSize - minTextSize) * (2 - distToFocus) / 2 + minTextSize, minTextSize, maxTextSize);
 
             float lineHeight = renderLyricLine(canvas, t, line, X, currentY, kWidth - X - 10.f,
-                                               SkFont(typefaceBold, fontSize), SkFont(typefaceBold, maxTextSize),
-                                               SkFont(typefaceBold, 30.f), distToFocus * 0.8);
+                                               SkFont(typefaceBold, fontSize), layoutFont,
+                                               subLyricFont, std::max(distToFocus * 0.8f - 4, 0.f));
 
             estimatedHeightMap[x] = lineHeight;
             currentY += lineHeight;
@@ -649,8 +656,10 @@ half4 main(vec2 fragCoord)
     lyric_ctx.name.current = (lyric_ctx.name.target + lyric_ctx.name.current) / 2;
 
         DO_ANIMATE_FLOAT_EASE_IN_OUT(currentLine);
-        //        glfwSwapBuffers(window);
-        glFlush();
+        if (enableDblBuffer)
+            glfwSwapBuffers(window);
+        else
+            glFlush();
     }
 
     cleanup_skia();
