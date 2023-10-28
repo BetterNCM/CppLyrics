@@ -1,5 +1,6 @@
 #define NATIVE_PLUGIN_CPP_EXTENSIONS
 #define NOMINMAX
+#include "GLFW/glfw3.h"
 #include "J:\Projects\BetterNCM\src\BetterNCMNativePlugin.h"
 #include "LyricParser.h"
 #include "core/SkData.h"
@@ -10,6 +11,11 @@
 #include <fstream>
 #include <memory>
 #include <sstream>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include "GLFW/glfw3native.h"
+
+#include "dwmapi.h"
+#pragma comment(lib, "dwmapi.lib")
 
 extern std::shared_ptr<std::vector<LyricLine>> _lines_ref;
 extern std::atomic<float> currentTimeExt;
@@ -96,4 +102,42 @@ __declspec(dllexport) int BetterNCMPluginMain(BetterNCMNativePlugin::PluginAPI *
 
     return 0;
 }
+}
+
+
+void processWindow(GLFWwindow *win) {
+    HWND hwnd = glfwGetWin32Window(win);
+
+    // win10 acrylic effect
+
+    // set window to frameless and parent to ncm win
+
+    // dwm set corner
+    MARGINS margins = {-1};
+    DwmSetWindowAttribute(hwnd, DWMWA_NCRENDERING_POLICY, &margins, sizeof(margins));
+    DwmExtendFrameIntoClientArea(hwnd, &margins);
+    DWM_WINDOW_CORNER_PREFERENCE preference = DWMWCP_ROUND;
+    DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &preference, sizeof(preference));
+    // mica
+    DWM_BLURBEHIND bb = {
+            .dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION,
+            .fEnable = TRUE,
+            .hRgnBlur = CreateRectRgn(0, 0, -1, -1),
+    };
+    DwmEnableBlurBehindWindow(hwnd, &bb);
+    BOOL value = TRUE;
+    DwmSetWindowAttribute(hwnd, DWMWA_USE_HOSTBACKDROPBRUSH, &value, sizeof(value));
+    DWM_SYSTEMBACKDROP_TYPE backdrop_type = DWMSBT_MAINWINDOW;
+    DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, &backdrop_type, sizeof(backdrop_type));
+    // use dark theme
+    DWMWINDOWATTRIBUTE attribute = DWMWA_USE_IMMERSIVE_DARK_MODE;
+    BOOL useImmersiveDarkMode = TRUE;
+    DwmSetWindowAttribute(hwnd, attribute, &useImmersiveDarkMode, sizeof(useImmersiveDarkMode));
+
+    // parent
+    //    HWND parent = FindWindowW(L"OrpheusBrowserHost", nullptr);
+    //
+    //    SetParent(hwnd, parent);
+    // topmost and lefttop
+    SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE);
 }

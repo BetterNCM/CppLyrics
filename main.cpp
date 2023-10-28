@@ -304,6 +304,7 @@ int initCppLyrics() {
     //  glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
     // disable double buffer
     glfwWindowHint(GLFW_DOUBLEBUFFER, enableFrameLimit);
+    glfwWindowHint(GLFW_DECORATED, 0);
 
     glfwWindowHint(GLFW_RESIZABLE, 1);
     //    glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, 1);
@@ -351,16 +352,13 @@ int initCppLyrics() {
     // Draw to the surface via its SkCanvas.
     SkCanvas *canvas = sSurface->getCanvas(); // We don't manage this pointer's lifetime.
     glfwSetWindowUserPointer(window, &canvas);// TODO: refactor to class, this should be ptr to class
+
     glfwSetWindowSizeCallback(window, [](GLFWwindow *window, int width, int height) {
         kWidth = width;
         kHeight = height;
         init_skia(width, height);
         *((SkCanvas **) glfwGetWindowUserPointer(window)) = sSurface->getCanvas();
-
-        glfwSetWindowCaptionArea(window, 0, 0, width, height);
     });
-
-    glfwSetWindowCaptionArea(window, 0, 0, kWidth, kHeight);
 
     // calc framerate
     double lastTime = glfwGetTime();

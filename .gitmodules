@@ -1,3 +1,4 @@
-[submodule "bgfx"]
-	path = bgfx
-	url = https://github.com/bkaradzic/bgfx.git
+[submodule "external/glfw3"]
+	path = external/glfw3
+	url = https://github.com/CybernetHacker14/glfw.git
+	branch = win32-borderless

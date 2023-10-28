@@ -46,7 +46,7 @@ add_library(bncm-plugin SHARED main.cpp
         render/RenderTextWrap.h
 )
 target_compile_options(bncm-plugin PUBLIC /MT)
-target_link_directories(bncm-plugin PUBLIC external/skia/out/Release-x86 /glfw3/cmake-build-release/src)
+target_link_directories(bncm-plugin PUBLIC external/skia/out/Release-x86 external/glfw3/cmake-build-release/src)
 target_link_libraries(bncm-plugin PUBLIC skia opengl32 glfw3)
 target_include_directories(bncm-plugin PUBLIC external/skia/include external/skia external/glfw3/include
         J:\\Projects\\BetterNCM\\src J:\\Projects\\BetterNCM\\src/3rd/libcef)
