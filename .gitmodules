@@ -1,6 +1,3 @@
 [submodule "bgfx"]
 	path = bgfx
 	url = https://github.com/bkaradzic/bgfx.git
-[submodule "external/glfw"]
-	path = external/glfw
-	url = https://github.com/glfw/glfw.git

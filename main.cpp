@@ -4,6 +4,8 @@
 #include "render/DynamicLyricWordRendererNormal.h"
 #include "render/RenderTextWrap.h"
 
+#define NOMINMAX
+#include "windows.h"
 
 static const bool enableLowEffect = false;
 
@@ -290,7 +292,7 @@ void renderSongInfo(SkCanvas &canvas, SkFont &font, SkFont &fontMinorInfo, bool 
 int initCppLyrics() {
     GLFWwindow *window;
     glfwSetErrorCallback(error_callback);
-    bool enableDblBuffer = false;
+    bool enableFrameLimit = false;
     if (!glfwInit()) {
         exit(EXIT_FAILURE);
     }
@@ -301,7 +303,7 @@ int initCppLyrics() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     //  glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
     // disable double buffer
-    glfwWindowHint(GLFW_DOUBLEBUFFER, enableDblBuffer);
+    glfwWindowHint(GLFW_DOUBLEBUFFER, enableFrameLimit);
 
     glfwWindowHint(GLFW_RESIZABLE, 1);
     //    glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, 1);
@@ -329,7 +331,7 @@ int initCppLyrics() {
 //    }
 #ifdef _WIN32
     void processWindow(GLFWwindow * hwnd);
-    // processWindow(window);
+    processWindow(window);
 #endif
 
 
@@ -339,7 +341,7 @@ int initCppLyrics() {
     }
     glfwMakeContextCurrent(window);
 
-    if (!enableDblBuffer)
+    if (!enableFrameLimit)
         glfwSwapInterval(0);
 
     init_skia(kWidth, kHeight);
@@ -355,7 +357,6 @@ int initCppLyrics() {
         init_skia(width, height);
         *((SkCanvas **) glfwGetWindowUserPointer(window)) = sSurface->getCanvas();
     });
-
 
     // calc framerate
     double lastTime = glfwGetTime();
@@ -382,7 +383,6 @@ int initCppLyrics() {
 
     int lastFocusedLine = -1;
     float lastLineHeight = 0.f;
-
 
     float estimatedHeightMap[2000];
 
@@ -483,7 +483,10 @@ half4 main(vec2 fragCoord)
         printf("SkRuntimeEffect error: %s\n", err.c_str());
         exit(1);
     }
+
+
     while (!glfwWindowShouldClose(window)) {
+
         const auto lines = *_lines_ref;
 
         if (lines.size() == 0) {
@@ -521,15 +524,17 @@ half4 main(vec2 fragCoord)
         if (songColor1) {
             const auto sc1 = *songColor1;
             const auto sc2 = *songColor2;
-            builder.uniform("fluidColor1") = SkV4{sc1.at(0), sc1.at(1), sc1.at(2), 255};
-            builder.uniform("fluidColor2") = SkV4{sc2.at(0), sc2.at(1), sc2.at(2), 255};
+            builder.uniform("fluidColor1") = SkV4{sc1.at(0), sc1.at(1), sc1.at(2), 256};
+            builder.uniform("fluidColor2") = SkV4{sc2.at(0), sc2.at(1), sc2.at(2), 256};
         } else {
-            builder.uniform("fluidColor1") = SkV4{54, 52, 57, 255};
-            builder.uniform("fluidColor2") = SkV4{255, 52, 0, 255};
+            builder.uniform("fluidColor1") = SkV4{54, 52, 57, 256};
+            builder.uniform("fluidColor2") = SkV4{255, 52, 0, 256};
         }
 
 
-        paint.setShader(builder.makeShader());
+        //        paint.setShader(builder.makeShader());
+        // use half opacity paint fluidColor1
+        paint.setColor(SkColorSetARGB(0x80, (int) (*songColor1).at(0), (int) (*songColor1).at(1), (int) (*songColor1).at(2)));
         paint.setBlendMode(SkBlendMode::kSrc);
 
         canvas->drawPaint(paint);
@@ -656,8 +661,9 @@ half4 main(vec2 fragCoord)
     lyric_ctx.name.current = (lyric_ctx.name.target + lyric_ctx.name.current) / 2;
 
         DO_ANIMATE_FLOAT_EASE_IN_OUT(currentLine);
-        if (enableDblBuffer)
-            glfwSwapBuffers(window);
+
+
+        if (enableFrameLimit) glfwSwapBuffers(window);
         else
             glFlush();
     }

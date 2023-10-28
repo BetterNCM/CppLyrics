@@ -88,6 +88,8 @@ __declspec(dllexport) int BetterNCMPluginMain(BetterNCMNativePlugin::PluginAPI *
             1, "cpplyrics.set_song_cover", +[](void **args) -> char * {
                 const auto data = SkData::MakeFromFileName(static_cast<char *>(args[0]));
                 const auto pic = SkImage::MakeFromEncoded(data);
+                if (songCover != nullptr)
+                    songCover.reset();
                 songCover = pic;
                 return nullptr;
             });
