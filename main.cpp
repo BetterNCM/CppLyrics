@@ -356,7 +356,11 @@ int initCppLyrics() {
         kHeight = height;
         init_skia(width, height);
         *((SkCanvas **) glfwGetWindowUserPointer(window)) = sSurface->getCanvas();
+
+        glfwSetWindowCaptionArea(window, 0, 0, width, height);
     });
+
+    glfwSetWindowCaptionArea(window, 0, 0, kWidth, kHeight);
 
     // calc framerate
     double lastTime = glfwGetTime();
