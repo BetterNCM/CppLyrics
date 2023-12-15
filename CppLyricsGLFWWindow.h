@@ -1,11 +1,13 @@
-//
-// Created by MicroBlock on 2023/12/15.
-//
+#pragma once
 
-#ifndef CORE_CPPLYRICSGLFWWINDOW_H
-#define CORE_CPPLYRICSGLFWWINDOW_H
 #include "main.h"
 #include "pch.h"
+
+#if defined(_WIN32)
+#include <windows.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include "GLFW/glfw3native.h"
+#endif
 
 class CppLyricsGLFWWindow {
     GrDirectContext *sContext = nullptr;
@@ -78,6 +80,7 @@ public:
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_DECORATED, 0);
         glfwWindowHint(GLFW_RESIZABLE, 1);
+        glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, 1);
         window = glfwCreateWindow(kWidth, kHeight, "CppLyrics", nullptr, nullptr);
         if (!window) {
             glfwTerminate();
@@ -150,8 +153,10 @@ public:
             cppLyrics.t = 0.f;
 
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-            //  HWND hwnd = glfwGetWin32Window(window);
-            // SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW);
+#if defined(_WIN32)
+            HWND hwnd = glfwGetWin32Window(window);
+            SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW);
+#endif
         }
 
         if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
@@ -171,8 +176,38 @@ public:
             while (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
                 glfwPollEvents();
         }
+
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+            cppLyrics.useSingleLine = !cppLyrics.useSingleLine;
+            while (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+                glfwPollEvents();
+        }
+
+        //        if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) {
+        //            cppLyrics.showTips = !cppLyrics.showTips;
+        //            while (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
+        //                glfwPollEvents();
+        //        }
+
+        if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) {
+            // taskbar mode
+            cppLyrics.useFluentBg = false;
+            cppLyrics.useFontBlur = false;
+            cppLyrics.useTextResize = false;
+            cppLyrics.useSingleLine = true;
+            cppLyrics.showTips = false;
+            cppLyrics.showSongInfo = false;
+            cppLyrics.minTextSize = 12.f;
+            cppLyrics.maxTextSize = 18.f;
+            cppLyrics.subLyricsMarginTop = 2.f;
+            cppLyrics.marginBottomLyrics = 6.f;
+            cppLyrics.wordMargin = 6.f;
+#if defined(_WIN32)
+            HWND hwnd = glfwGetWin32Window(window);
+            SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+#endif
+            while (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
+                glfwPollEvents();
+        }
     }
 };
-
-
-#endif//CORE_CPPLYRICSGLFWWINDOW_H

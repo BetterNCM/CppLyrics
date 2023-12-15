@@ -28,7 +28,10 @@ public:
     int kWidth = 630;
     int kHeight = 900;
     int lastFPS = 0;
+    float minTextSize = 25.f, maxTextSize = 50.f, wordMargin = 10.f;
+    bool showSongInfo = true;
     bool showTips = true;
+    float subLyricsMarginTop = 20.f, marginBottomLyrics = 10.f;
 
 #define ANIMATED_FLOAT(name, initVal, step) \
     struct name##_t {                       \
