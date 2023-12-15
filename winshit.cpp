@@ -16,6 +16,7 @@
 #include "dwmapi.h"
 #pragma comment(lib, "dwmapi.lib")
 
+#include "CppLyricsGLFWWindow.h"
 
 extern std::shared_ptr<std::vector<LyricLine>> _lines_ref;
 extern std::atomic<float> currentTimeExt;
@@ -26,7 +27,6 @@ extern std::atomic<std::array<float, 3> *> songColor1;
 extern std::atomic<std::array<float, 3> *> songColor2;
 extern sk_sp<SkImage> songCover;
 
-int initCppLyrics();
 int main() {
     // set self to high priority
     SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
@@ -52,15 +52,24 @@ int main() {
             *_lines_ref = LyricParser::parse(lyricStr);
             currentTimeExt.exchange(0.f);
 
-            songName.exchange(std::make_shared<std::string>("song name877878787787887878787887"));
-            songArtist.exchange(std::make_shared<std::string>("song artist"));
+            songName.exchange(std::make_shared<std::string>("Hard Time"));
+            songArtist.exchange(std::make_shared<std::string>("Seinabo Sey"));
             songColor1.exchange(new std::array<float, 3>{0, 52, 77});
             songColor2.exchange(new std::array<float, 3>{4, 54, 56});
             songCover = SkImage::MakeFromEncoded(SkData::MakeFromFileName("../cover.jpg"));
         }
     }).detach();
-    initCppLyrics();
+
+    CppLyricsGLFWWindow window1;
+    CppLyricsGLFWWindow window2;
+
+    while (!glfwWindowShouldClose(window1.window) && !glfwWindowShouldClose(window2.window)) {
+        glfwPollEvents();
+        window1.render();
+        window2.render();
+    }
 }
+
 
 void processWindow(GLFWwindow *win) {
     HWND hwnd = glfwGetWin32Window(win);
@@ -70,26 +79,29 @@ void processWindow(GLFWwindow *win) {
     // set window to frameless and parent to ncm win
 
     // dwm set corner
-    MARGINS margins = {-1};
-    DwmSetWindowAttribute(hwnd, DWMWA_NCRENDERING_POLICY, &margins, sizeof(margins));
-    DwmExtendFrameIntoClientArea(hwnd, &margins);
-    DWM_WINDOW_CORNER_PREFERENCE preference = DWMWCP_ROUND;
-    DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &preference, sizeof(preference));
-    // mica
-    DWM_BLURBEHIND bb = {
-            .dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION,
-            .fEnable = TRUE,
-            .hRgnBlur = CreateRectRgn(0, 0, -1, -1),
-    };
-    DwmEnableBlurBehindWindow(hwnd, &bb);
-    BOOL value = TRUE;
-    DwmSetWindowAttribute(hwnd, DWMWA_USE_HOSTBACKDROPBRUSH, &value, sizeof(value));
-    DWM_SYSTEMBACKDROP_TYPE backdrop_type = DWMSBT_MAINWINDOW;
-    DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, &backdrop_type, sizeof(backdrop_type));
-    // use dark theme
-    DWMWINDOWATTRIBUTE attribute = DWMWA_USE_IMMERSIVE_DARK_MODE;
-    BOOL useImmersiveDarkMode = TRUE;
-    DwmSetWindowAttribute(hwnd, attribute, &useImmersiveDarkMode, sizeof(useImmersiveDarkMode));
+    if (true) {
+        MARGINS margins = {-1};
+        DwmSetWindowAttribute(hwnd, DWMWA_NCRENDERING_POLICY, &margins, sizeof(margins));
+        DwmExtendFrameIntoClientArea(hwnd, &margins);
+        //        SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_CAPTION);
+        //        SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_THICKFRAME);
+        //        SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_SYSMENU);
+        //        SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_MINIMIZEBOX);
+        //        SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & ~WS_MAXIMIZEBOX);
+        // mica
+        DWM_WINDOW_CORNER_PREFERENCE preference = DWMWCP_ROUND;
+        DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &preference, sizeof(preference));
+        BOOL value = TRUE;
+        DwmSetWindowAttribute(hwnd, DWMWA_USE_HOSTBACKDROPBRUSH, &value, sizeof(value));
+        DWM_SYSTEMBACKDROP_TYPE backdrop_type = DWMSBT_MAINWINDOW;
+        DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, &backdrop_type, sizeof(backdrop_type));
+        // use dark theme
+        DWMWINDOWATTRIBUTE attribute = DWMWA_USE_IMMERSIVE_DARK_MODE;
+        BOOL useImmersiveDarkMode = TRUE;
+        DwmSetWindowAttribute(hwnd, attribute, &useImmersiveDarkMode, sizeof(useImmersiveDarkMode));
+    } else {
+    }
+
 
     // parent
     //    HWND parent = FindWindowW(L"OrpheusBrowserHost", nullptr);

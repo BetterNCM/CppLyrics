@@ -11,7 +11,7 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 # self built glfw3
 
 
-add_executable(demo main.cpp
+add_executable(demo main.h
         winshit.cpp
         LyricParser.cpp
         LyricParser.h
@@ -24,6 +24,10 @@ add_executable(demo main.cpp
         external/utf8.cpp
         external/utf8.h
         render/RenderTextWrap.h
+        main.cpp
+        main.cpp
+        CppLyricsGLFWWindow.cpp
+        CppLyricsGLFWWindow.h
 )
 target_compile_options(demo PUBLIC /MT)
 target_link_directories(demo PUBLIC external/skia/out/Release-x86 external/glfw3/cmake-build-release/src)
@@ -31,7 +35,7 @@ target_link_libraries(demo PUBLIC skia opengl32 glfw3)
 target_include_directories(demo PUBLIC external/skia/include external/skia external/glfw3/include)
 
 
-add_library(bncm-plugin SHARED main.cpp
+add_library(bncm-plugin SHARED main.h
         bncm.cpp
         LyricParser.cpp
         LyricParser.h
@@ -44,6 +48,10 @@ add_library(bncm-plugin SHARED main.cpp
         external/utf8.cpp
         external/utf8.h
         render/RenderTextWrap.h
+        main.cpp
+        main.cpp
+        CppLyricsGLFWWindow.cpp
+        CppLyricsGLFWWindow.h
 )
 target_compile_options(bncm-plugin PUBLIC /MT)
 target_link_directories(bncm-plugin PUBLIC external/skia/out/Release-x86 external/glfw3/cmake-build-release/src)

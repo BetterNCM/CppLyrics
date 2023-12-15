@@ -14,6 +14,8 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include "GLFW/glfw3native.h"
 
+#include "CppLyricsGLFWWindow.h"
+
 #include "dwmapi.h"
 #pragma comment(lib, "dwmapi.lib")
 
@@ -25,14 +27,18 @@ extern std::atomic<std::shared_ptr<std::string>> songArtist;
 extern std::atomic<std::array<float, 3> *> songColor1;
 extern std::atomic<std::array<float, 3> *> songColor2;
 extern sk_sp<SkImage> songCover;
-int initCppLyrics();
+
 
 extern "C" {
 __declspec(dllexport) int BetterNCMPluginMain(BetterNCMNativePlugin::PluginAPI *api) {
+    static CppLyricsGLFWWindow *win = nullptr;
     api->addNativeAPI(
             new NativeAPIType[0]{}, 0, "cpplyrics.init", +[](void **args) -> char * {
-                std::thread([]() {
-                    initCppLyrics();
+                std::thread([&]() {
+                    win = new CppLyricsGLFWWindow();
+                    while (win->render()) {
+                        glfwPollEvents();
+                    }
                 }).detach();
                 return nullptr;
             });

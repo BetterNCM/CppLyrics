@@ -21,7 +21,7 @@ struct DynamicLyricWordRendererNormal : public DynamicLyricWordRenderer {
         float progress = (relativeTime) / (word.end - word.start);
 
         // draw from top to bottom (change baseline to top)
-        y += font.getSize();// - (1 - progress) * 4.f
+        y += font.getSize();// - (1 - progress) * 4.f;
 
         SkPaint paintBg, paint1;
         paintBg.setAntiAlias(true);
