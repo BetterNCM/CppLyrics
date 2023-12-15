@@ -27,7 +27,8 @@ public:
 
     int kWidth = 630;
     int kHeight = 900;
-
+    int lastFPS = 0;
+    bool showTips = true;
 
 #define ANIMATED_FLOAT(name, initVal, step) \
     struct name##_t {                       \
@@ -78,7 +79,6 @@ public:
     bool useTextResize = false;
     void renderScrollingString(SkCanvas &canvas, SkFont &font, SkPaint &paint, int maxWidth, float t, int x, int y, const char *text);
     void renderSongInfo(SkCanvas &canvas, SkFont &font, SkFont &fontMinorInfo, bool smallMode, int maxWidth);
-    int initCppLyrics();
     CppLyrics();
     void render(SkCanvas *canvas);
     void animate(const double deltaTime);

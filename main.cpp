@@ -191,77 +191,7 @@ void CppLyrics::renderSongInfo(SkCanvas &canvas, SkFont &font, SkFont &fontMinor
     paint.setColor(SkColorSetARGB(80, 255, 255, 255));
     renderScrollingString(canvas, fontMinorInfo, paint, songInfoWidth, fluidTime, songInfoX, songInfoY, songArtist.load()->c_str());
 }
-int CppLyrics::initCppLyrics() {
-    //    GLFWwindow *window;
-    //    //   glfwSetErrorCallback(error_callback);
-    //    bool enableFrameLimit = true;
-    //
-    //
-    //    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    //    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    //    //   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    //    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    //    //  glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
-    //    // disable double buffer
-    //    glfwWindowHint(GLFW_DOUBLEBUFFER, enableFrameLimit);
-    //    glfwWindowHint(GLFW_DECORATED, 0);
-    //
-    //    glfwWindowHint(GLFW_RESIZABLE, 1);
-    //    //    glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, 1);
-    //
-    //    window = glfwCreateWindow(kWidth, kHeight, "C++ Lyrics", NULL, NULL);
-    ////    while (!glfwWindowShouldClose(window)) {
-    ////        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    ////        glClear(GL_COLOR_BUFFER_BIT);
-    ////        glBegin(GL_QUADS);
-    ////        glColor3f(0, 0, 1);
-    ////        glVertex3f(-0.5, -0.5, -1);
-    ////        glColor3f(0, 1, 0);
-    ////        glVertex3f(0.5, -0.5, -1);
-    ////        glColor3f(1, 0, 1);
-    ////        glVertex3f(0.5, 0.5, -1);
-    ////        glColor3f(1, 1, 0);
-    ////        glVertex3f(-0.5, 0.5, -1);
-    ////        glEnd();
-    ////
-    ////        // swap front and back buffers
-    ////        glfwSwapBuffers(window);
-    ////
-    ////        // poll for and process events
-    ////        glfwPollEvents();
-    ////    }
-    //#ifdef _WIN32
-    //    void processWindow(GLFWwindow * hwnd);
-    //    processWindow(window);
-    //#endif
-    //
-    //
-    //    if (!window) {
-    //        glfwTerminate();
-    //        exit(EXIT_FAILURE);
-    //    }
-    //    glfwMakeContextCurrent(window);
-    //
-    //    if (!enableFrameLimit)
-    //        glfwSwapInterval(0);
-    //
-    //
-    //    // Draw to the surface via its SkCanvas.
-    //    SkCanvas *canvas = sSurface->getCanvas();// We don't manage this pointer's lifetime.
-    //
-    //
-    //    // calc framerate
-    //
-    //
-    //    if (enableFrameLimit) glfwSwapBuffers(window);
-    //    else
-    //        glFlush();
-    //}}
-    //glfwDestroyWindow(window);
-    ////    glfwTerminate();
-    ////    exit(EXIT_SUCCESS);
-    return 0;
-}
+
 CppLyrics::CppLyrics() {
 }
 void CppLyrics::render(SkCanvas *canvas) {
@@ -298,85 +228,16 @@ uniform vec2 iImageResolution;
 uniform vec2 color1;
 uniform vec2 color2;
 uniform shader iImage1;
-
 uniform vec4 fluidColor1;
 uniform vec4 fluidColor2;
-//	Classic Perlin 3D Noise
-//	by Stefan Gustavson
-//
-vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
-vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
-vec3 fade(vec3 t) {return t*t*t*(t*(t*6.0-15.0)+10.0);}
-float cnoise(vec3 P){
-  vec3 Pi0 = floor(P); // Integer part for indexing
-  vec3 Pi1 = Pi0 + vec3(1.0); // Integer part + 1
-  Pi0 = mod(Pi0, 289.0);
-  Pi1 = mod(Pi1, 289.0);
-  vec3 Pf0 = fract(P); // Fractional part for interpolation
-  vec3 Pf1 = Pf0 - vec3(1.0); // Fractional part - 1.0
-  vec4 ix = vec4(Pi0.x, Pi1.x, Pi0.x, Pi1.x);
-  vec4 iy = vec4(Pi0.yy, Pi1.yy);
-  vec4 iz0 = Pi0.zzzz;
-  vec4 iz1 = Pi1.zzzz;
-  vec4 ixy = permute(permute(ix) + iy);
-  vec4 ixy0 = permute(ixy + iz0);
-  vec4 ixy1 = permute(ixy + iz1);
-  vec4 gx0 = ixy0 / 7.0;
-  vec4 gy0 = fract(floor(gx0) / 7.0) - 0.5;
-  gx0 = fract(gx0);
-  vec4 gz0 = vec4(0.5) - abs(gx0) - abs(gy0);
-  vec4 sz0 = step(gz0, vec4(0.0));
-  gx0 -= sz0 * (step(0.0, gx0) - 0.5);
-  gy0 -= sz0 * (step(0.0, gy0) - 0.5);
-  vec4 gx1 = ixy1 / 7.0;
-  vec4 gy1 = fract(floor(gx1) / 7.0) - 0.5;
-  gx1 = fract(gx1);
-  vec4 gz1 = vec4(0.5) - abs(gx1) - abs(gy1);
-  vec4 sz1 = step(gz1, vec4(0.0));
-  gx1 -= sz1 * (step(0.0, gx1) - 0.5);
-  gy1 -= sz1 * (step(0.0, gy1) - 0.5);
-  vec3 g000 = vec3(gx0.x,gy0.x,gz0.x);
-  vec3 g100 = vec3(gx0.y,gy0.y,gz0.y);
-  vec3 g010 = vec3(gx0.z,gy0.z,gz0.z);
-  vec3 g110 = vec3(gx0.w,gy0.w,gz0.w);
-  vec3 g001 = vec3(gx1.x,gy1.x,gz1.x);
-  vec3 g101 = vec3(gx1.y,gy1.y,gz1.y);
-  vec3 g011 = vec3(gx1.z,gy1.z,gz1.z);
-  vec3 g111 = vec3(gx1.w,gy1.w,gz1.w);
-  vec4 norm0 = taylorInvSqrt(vec4(dot(g000, g000), dot(g010, g010), dot(g100, g100), dot(g110, g110)));
-  g000 *= norm0.x;
-  g010 *= norm0.y;
-  g100 *= norm0.z;
-  g110 *= norm0.w;
-  vec4 norm1 = taylorInvSqrt(vec4(dot(g001, g001), dot(g011, g011), dot(g101, g101), dot(g111, g111)));
-  g001 *= norm1.x;
-  g011 *= norm1.y;
-  g101 *= norm1.z;
-  g111 *= norm1.w;
-  float n000 = dot(g000, Pf0);
-  float n100 = dot(g100, vec3(Pf1.x, Pf0.yz));
-  float n010 = dot(g010, vec3(Pf0.x, Pf1.y, Pf0.z));
-  float n110 = dot(g110, vec3(Pf1.xy, Pf0.z));
-  float n001 = dot(g001, vec3(Pf0.xy, Pf1.z));
-  float n101 = dot(g101, vec3(Pf1.x, Pf0.y, Pf1.z));
-  float n011 = dot(g011, vec3(Pf0.x, Pf1.yz));
-  float n111 = dot(g111, Pf1);
-  vec3 fade_xyz = fade(Pf0);
-  vec4 n_z = mix(vec4(n000, n100, n010, n110), vec4(n001, n101, n011, n111), fade_xyz.z);
-  vec2 n_yz = mix(n_z.xy, n_z.zw, fade_xyz.y);
-  float n_xyz = mix(n_yz.x, n_yz.y, fade_xyz.x);
-  return 2.2 * n_xyz;
-}
 
 half4 shaderBlend(vec2 fragCoord) {
-	vec2 uv = 2.4 * fragCoord.xy / vec2(max(iResolution.x, iResolution.y));
-    float p = cnoise(vec3(iTime, uv.x, uv.y));
-    return half4(mix(fluidColor1/256, fluidColor2 / 256, p));
+    return mix(fluidColor1 / 256, fluidColor2 / 256, fragCoord.x / iResolution.x);
 }
 
-const float r = 10;
+const float r = 3;
 const float pi = 3.1415926;
-const float ste = 0.3;
+const float ste = 0.5;
 half4 blurred(float2 fragCoord)
 {
 	vec2 uv = fragCoord.xy / iImageResolution.xy;
@@ -395,8 +256,8 @@ half4 blurred(float2 fragCoord)
 
 half4 main(vec2 fragCoord) {
     float iTime = iTime / 19;
-    vec2 uv = fragCoord.xy / iResolution.xy;
-    vec2 p=(fragCoord.xy / 4 -iResolution.xy)/max(iResolution.x,iResolution.y);
+    vec2 uv = fragCoord.xy / iImageResolution.xy;
+    vec2 p=(fragCoord.xy / 4 - iImageResolution.xy)/max(iImageResolution.x,iImageResolution.y);
     float2 scale = iImageResolution.xy / iResolution.xy;
 
     for(int i=1;i<45;i++)
@@ -409,7 +270,7 @@ half4 main(vec2 fragCoord) {
 
   	half4 v1 = blurred(mod(p * (scale / 1.5 + iTime / 100 + 35), iImageResolution.xy));
   	half4 v2 = shaderBlend(p);
-  	return mix(v1, v2, 0.3);
+  	return min(v1, v2) + v1*0.2;
 }
 )"));
 
@@ -428,22 +289,7 @@ half4 main(vec2 fragCoord) {
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     double currentTime = glfwGetTime();
-    //    nbFrames++;
 
-    //    if (currentTime - lastTime >= .3) {
-    //        lastFPS = nbFrames / (currentTime - lastTime);
-    //        nbFrames = 0;
-    //        lastTime = currentTime;
-    //    }
-
-    // get frame passed
-
-    //    double currentTimeFrame = glfwGetTime();
-    //    double deltaTime = (currentTimeFrame - lastTimeFrame) * 1000;
-    //    lastTimeFrame = currentTimeFrame;
-
-
-    //    glfwPollEvents();
 
     SkPaint paint;
     // make iTime uniform
@@ -479,10 +325,11 @@ half4 main(vec2 fragCoord) {
     //                pic, 0, 0);
     paint = SkPaint();
     paint.setColor(SkColorSetARGB(40, 255, 255, 255));
-    //    canvas->drawTextBlob(
-    //            SkTextBlob::MakeFromString(
-    //                    std::format("Bg(g): {} Blur(b): {} Resize(r): {} | FPS: {} Time: {:.2f} ", useFluentBg, useFontBlur, useTextResize, lastFPS, t).c_str(), SkFont(typefaceBold, 15)),
-    //            10, 30, paint);
+    if (showTips)
+        canvas->drawTextBlob(
+                SkTextBlob::MakeFromString(
+                        std::format("Bg(g): {} Blur(b): {} Resize(r): {} | FPS: {} Time: {:.2f} ", useFluentBg, useFontBlur, useTextResize, lastFPS, t).c_str(), SkFont(typefaceBold, 15)),
+                10, 30, paint);
 
 
     int focusedLineNum = lines.size();
@@ -561,46 +408,8 @@ half4 main(vec2 fragCoord) {
         estimatedHeightMap[x] = lineHeight;
         currentY += lineHeight;
     }
-
-
-    //        if (currentTimeExt > 0) {
-    //            t = currentTimeExt;
-    //            currentTimeExt = -1.f;
-    //        } else {
-    //            if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-    //                t += 140.f * framePassed;
-    //            if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-    //                t -= 140.f * framePassed;
-    //
-    //            if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
-    //                t = 0.f;
-    //
-    //            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-    //                HWND hwnd = glfwGetWin32Window(window);
-    //                SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW);
-    //            }
-    //
-    //            if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
-    //                useFluentBg = !useFluentBg;
-    //                while (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
-    //                    glfwPollEvents();
-    //            }
-    //
-    //            if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
-    //                useFontBlur = !useFontBlur;
-    //                while (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS)
-    //                    glfwPollEvents();
-    //            }
-    //
-    //            if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
-    //                useTextResize = !useTextResize;
-    //                while (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-    //                    glfwPollEvents();
-    //            }
-    //
-    //            if (!isPaused)
-    //                t += deltaTime;
 }
+
 
 void CppLyrics::animate(const double deltaTime) {
     if (currentTimeExt > 0) {

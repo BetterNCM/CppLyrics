@@ -13,7 +13,6 @@ class CppLyricsGLFWWindow {
     GrBackendRenderTarget backendRenderTarget;
     CppLyrics cppLyrics;
 
-
     static void error_callback(int error, const char *description) {
         std::cout << error << " " << description;
     }
@@ -95,16 +94,19 @@ public:
         cppLyrics.kWidth = kWidth;
         glfwSetWindowSizeCallback(window, [](GLFWwindow *window, int width, int height) {
             const auto cppLyricsWin = ((CppLyricsGLFWWindow *) glfwGetWindowUserPointer(window));
-            cppLyricsWin->kHeight = height;
-            cppLyricsWin->kWidth = width;
-            cppLyricsWin->cppLyrics.kHeight = height;
-            cppLyricsWin->cppLyrics.kWidth = width;
-            cppLyricsWin->init_skia(width, height);
+            cppLyricsWin->resize(width, height);
         });
     }
     double lastAnimeTime = -1;
     double lastFPSUpdateTime = -1;
     int frameCount = 0;
+    void resize(int width, int height) {
+        kWidth = width;
+        kHeight = height;
+        cppLyrics.kHeight = height;
+        cppLyrics.kWidth = width;
+        init_skia(width, height);
+    }
     bool render() {
         glfwMakeContextCurrent(window);
         if (glfwWindowShouldClose(window)) {
@@ -113,7 +115,7 @@ public:
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         auto canvas = sSurface->getCanvas();
-        canvas->clear(SK_ColorBLACK);
+        canvas->clear(SK_ColorTRANSPARENT);
         cppLyrics.render(canvas);
         sContext->flush();
         glfwSwapBuffers(window);
@@ -124,7 +126,7 @@ public:
             lastFPSUpdateTime = currentTime;
         frameCount++;
         if (currentTime - lastFPSUpdateTime > 1) {
-            std::cout << frameCount << std::endl;
+            cppLyrics.lastFPS = frameCount;
             frameCount = 0;
             lastFPSUpdateTime = currentTime;
         }
@@ -134,9 +136,42 @@ public:
         const auto deltaTime = (currentTime - lastAnimeTime) * 1000;
         lastAnimeTime = currentTime;
         cppLyrics.animate(deltaTime);
+        processKeyEvts(deltaTime);
         return true;
     }
     GLFWwindow *window = nullptr;
+    void processKeyEvts(float deltaTime) {
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+            cppLyrics.t += 7.f * deltaTime;
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+            cppLyrics.t -= 7.f * deltaTime;
+
+        if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
+            cppLyrics.t = 0.f;
+
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+            //  HWND hwnd = glfwGetWin32Window(window);
+            // SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW);
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
+            cppLyrics.useFluentBg = !cppLyrics.useFluentBg;
+            while (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
+                glfwPollEvents();
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
+            cppLyrics.useFontBlur = !cppLyrics.useFontBlur;
+            while (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS)
+                glfwPollEvents();
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+            cppLyrics.useTextResize = !cppLyrics.useTextResize;
+            while (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+                glfwPollEvents();
+        }
+    }
 };
 
 
