@@ -55,28 +55,25 @@ public:
     constexpr static const float marginBottom = 0.f;
 
     float renderLyricLine(
-            SkCanvas *canvas,
-            float relativeTime,
-            const LyricLine &line,
-            float x, float y,
-            float maxWidth,
-            const SkFont &font,
-            const SkFont &layoutFont,
-            const SkFont &fontSubLyrics,
-            float blur = 0.f);
+            SkCanvas *canvas, float relativeTime, const LyricLine &line,
+            float x, float y, float maxWidth, const SkFont &font,
+            const SkFont &layoutFont, const SkFont &fontSubLyrics,
+            float blur = 0.f, bool overflowScroll = false);
 
     float estimateLyricLineHeight(
             const LyricLine &line,
             float maxWidth,
             const SkFont &font,
             const SkFont &layoutFont,
-            const SkFont &fontSubLyrics);
+            const SkFont &fontSubLyrics,
+            bool overflowScroll = false);
 
     float t = 0.f;
     float fluidTime = 0.f;
     bool useFluentBg = true;
     bool useFontBlur = false;
     bool useTextResize = false;
+    bool useSingleLine = true;
     void renderScrollingString(SkCanvas &canvas, SkFont &font, SkPaint &paint, int maxWidth, float t, int x, int y, const char *text);
     void renderSongInfo(SkCanvas &canvas, SkFont &font, SkFont &fontMinorInfo, bool smallMode, int maxWidth);
     CppLyrics();

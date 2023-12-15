@@ -16,7 +16,7 @@ struct DynamicLyricWordRendererNormal : public DynamicLyricWordRenderer {
             const LyricDynamicWord &word,
             float x, float y,
             const SkFont &font,
-            float blur) const override {
+            float blur, float opacity) const override {
         relativeTime = std::clamp(relativeTime - word.start, 0.f, word.end - word.start);
         float progress = (relativeTime) / (word.end - word.start);
 
@@ -40,7 +40,7 @@ struct DynamicLyricWordRendererNormal : public DynamicLyricWordRenderer {
 
         // paint background text
         paintBg.setBlendMode(SkBlendMode::kPlus);
-        paintBg.setColor(SkColorSetARGB(90, 255, 255, 255));
+        paintBg.setColor(SkColorSetARGB(90 * opacity, 255, 255, 255));
 
         sk_sp<SkTextBlob> textBlob = SkTextBlob::MakeFromString(word.word.c_str(), font);
 
@@ -51,7 +51,7 @@ struct DynamicLyricWordRendererNormal : public DynamicLyricWordRenderer {
         // set mask texture
         SkPoint pts[2] = {{x, 0},
                           {x + textWidth, 0}};
-        SkColor colors[2] = {SK_ColorWHITE, SkColorSetARGB(0x0, 0xFF, 0xFF, 0xFF)};
+        SkColor colors[2] = {SkColorSetARGB(0xFF * opacity, 0xFF, 0xFF, 0xFF), SkColorSetARGB(0x0, 0xFF, 0xFF, 0xFF)};
         const auto translate = SkMatrix::Translate(textWidth * (progress * 2 - 1), 0);
         const auto shader = SkGradientShader::MakeLinear(pts,
                                                          colors,

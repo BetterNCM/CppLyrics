@@ -13,7 +13,7 @@ struct DynamicLyricWordRenderer {
                                   float relativeTime,
                                   const LyricDynamicWord &word,
                                   float x, float y,
-                                  const SkFont &font, float blur) const = 0;
+                                  const SkFont &font, float blur, float opacity) const = 0;
     [[nodiscard]] virtual float measureLyricWord(const LyricDynamicWord &word, const SkFont &font) const = 0;
 };
 
