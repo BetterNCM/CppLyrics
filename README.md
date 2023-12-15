@@ -7,9 +7,9 @@
 ⚠ WIP ⚠
 
 ---------------------
+![image](https://github.com/BetterNCM/CppLyrics/assets/66859419/8a0a3464-a156-40a4-8237-379ec10e9ac2)
 
-![image](https://github.com/BetterNCM/CppLyrics/assets/66859419/5cc32d56-a5c6-4691-8718-4610d6e15956)
-
-![image](https://github.com/BetterNCM/CppLyrics/assets/66859419/08cf3c06-7b9c-4c61-afca-bb097cdb71be)
-
-![image](https://github.com/BetterNCM/CppLyrics/assets/66859419/fcdf214f-4306-4fc1-800c-fe2b713e6c4a)
+![image](https://github.com/BetterNCM/CppLyrics/assets/66859419/ba321a23-038b-46ea-9cf1-f33e76af7704)
+![image](https://github.com/BetterNCM/CppLyrics/assets/66859419/ddf972c1-fc12-471c-916e-0f65efdbe217)
+![image](https://github.com/BetterNCM/CppLyrics/assets/66859419/cf6e305d-372b-4ac6-bc9b-52b42a32a824)
+![image](https://github.com/BetterNCM/CppLyrics/assets/66859419/724ccd69-15eb-4ca9-9a7a-c6cdf114e1fb)
