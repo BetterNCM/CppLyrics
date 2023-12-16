@@ -199,9 +199,9 @@ public:
             cppLyrics.showSongInfo = false;
             cppLyrics.minTextSize = 12.f;
             cppLyrics.maxTextSize = 18.f;
-            cppLyrics.subLyricsMarginTop = 2.f;
+            cppLyrics.subLyricsMarginTop = 4.f;
             cppLyrics.marginBottomLyrics = 6.f;
-            cppLyrics.wordMargin = 6.f;
+            cppLyrics.wordMargin = 5.f;
 #if defined(_WIN32)
             HWND hwnd = glfwGetWin32Window(window);
             SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);

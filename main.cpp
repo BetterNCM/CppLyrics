@@ -94,6 +94,8 @@ float CppLyrics::renderLyricLine(
 
     currentY += font.getSize() + subLyricsMarginTop;
 
+    const auto progress = std::clamp((relativeTime - line.start) / (line.end - line.start), 0.f, 1.f);
+
     for (const auto &subLyric: line.subLyrics) {
         auto paint = SkPaint();
         paint.setColor(SkColorSetARGB(0x70, 0xFF, 0xFF, 0xFF));
@@ -101,7 +103,14 @@ float CppLyrics::renderLyricLine(
         if (blur > 0.f) {
             paint.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, blur, false));
         }
-        currentY += renderTextWithWrap(*canvas, paint, fontSubLyrics, fontSubLyrics, maxWidth, x, currentY, subLyric) + 8.f;
+        if (useSingleLine) {
+            const auto subLyricWidth = fontSubLyrics.measureText(subLyric.c_str(), subLyric.size(), SkTextEncoding::kUTF8);
+            const auto offsetX = std::clamp((subLyricWidth - maxWidth) * progress, 0.f, std::max(subLyricWidth - maxWidth, 0.f));
+            canvas->drawString(subLyric.c_str(), x - offsetX, currentY + fontSubLyrics.getSize(), fontSubLyrics, paint);
+            currentY += fontSubLyrics.getSize() + 8.f;
+        } else {
+            currentY += renderTextWithWrap(*canvas, paint, fontSubLyrics, fontSubLyrics, maxWidth, x, currentY, subLyric) + 8.f;
+        }
     }
 
     return currentY - y + marginBottomLyrics;
