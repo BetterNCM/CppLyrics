@@ -370,9 +370,9 @@ half4 main(float2 fragCoord) {
                 SkRect::MakeXYWH(0, 0, kWidth, kHeight),
                 24.f, 24.f);
         paint.setAntiAlias(true);
-        canvas->drawPath(path, paint);
-    } else
-        canvas->drawPaint(paint);
+    }
+
+    canvas->drawPaint(paint);
 
     paint = SkPaint();
     paint.setColor(SkColorSetARGB(40, 255, 255, 255));
