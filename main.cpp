@@ -249,94 +249,52 @@ void CppLyrics::render(SkCanvas *canvas, SkSurface *surface) {
     static const auto [effect, err] = SkRuntimeEffect::MakeForShader(SkString(R"(
 uniform float iTime;
 uniform vec2 iResolution;
-uniform shader iImage1;
 uniform vec2 iImageResolution;
+uniform vec2 color1;
+uniform vec2 color2;
+uniform shader iImage1;
 uniform vec4 fluidColor1;
 uniform vec4 fluidColor2;
-uniform float opacity;
 
-mat2 Rot(float a)
-{
-    float s = sin(a);
-    float c = cos(a);
-    return mat2(c, -s, s, c);
-}
-// Created by inigo quilez - iq/2014
-// License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
-vec2 hash( vec2 p )
-{
-    p = vec2( dot(p,vec2(2127.1,81.17)), dot(p,vec2(1269.5,283.37)) );
-	return fract(sin(p)*43758.5453);
+half4 shaderBlend(vec2 fragCoord) {
+    return mix(fluidColor1 / 256, fluidColor2 / 256, fragCoord.x / iResolution.x);
 }
 
-float noise( in vec2 p )
+const float r = 3;
+const float pi = 3.1415926;
+const float ste = 0.5;
+half4 blurred(float2 fragCoord)
 {
-    vec2 i = floor( p );
-    vec2 f = fract( p );
-
-	vec2 u = f*f*(3.0-2.0*f);
-
-    float n = mix( mix( dot( -1.0+2.0*hash( i + vec2(0.0,0.0) ), f - vec2(0.0,0.0) ),
-                        dot( -1.0+2.0*hash( i + vec2(1.0,0.0) ), f - vec2(1.0,0.0) ), u.x),
-                   mix( dot( -1.0+2.0*hash( i + vec2(0.0,1.0) ), f - vec2(0.0,1.0) ),
-                        dot( -1.0+2.0*hash( i + vec2(1.0,1.0) ), f - vec2(1.0,1.0) ), u.x), u.y);
-	return 0.5 + 0.5*n;
+	vec2 uv = fragCoord.xy / iImageResolution.xy;
+  	half4 t = iImage1.eval(fragCoord.xy);
+	float q=0;
+  	for(float i=-pi;i<pi;i+=ste) {
+    	t+=iImage1.eval(vec2(
+           fragCoord.x + sin(i) * r,
+           fragCoord.y + cos(i) * r
+        ));
+        q++;
+    }
+  	return t / q;
 }
 
-half4 shaderBlend(vec2 fragCoord)
-{
-    vec2 uv = fragCoord/iResolution.xy;
-    float ratio = iResolution.x / iResolution.y;
-
-    vec2 tuv = uv;
-    tuv -= .5;
-
-    // rotate with Noise
-    float degree = noise(vec2(iTime*.1, tuv.x*tuv.y));
-
-    tuv.y *= 1./ratio;
-    tuv *= Rot(radians((degree-.5)*720.+180.));
-	tuv.y *= ratio;
-
-
-    // Wave warp with sin
-    float frequency = 5.;
-    float amplitude = 30.;
-    float speed = iTime * 2.;
-    tuv.x += sin(tuv.y*frequency+speed)/amplitude;
-   	tuv.y += sin(tuv.x*frequency*1.5+speed)/(amplitude*.5);
-
-    vec3 colorA = fluidColor1.xyz / 256;
-    vec3 colorB = fluidColor2.xyz / 256;
-    vec3 colorC = colorB * 1.2;
-    vec3 colorD = colorA * 1.2;
-    vec3 layer1 = mix(colorA, colorB, smoothstep(-.3, .2, (tuv*Rot(radians(-5.))).x));
-    vec3 layer2 = mix(colorC, colorD, smoothstep(-.3, .2, (tuv*Rot(radians(-5.))).x));
-
-    vec3 finalComp = mix(layer1, layer2, smoothstep(.5, -.3, tuv.y));
-
-    vec3 col = finalComp;
-
-    return vec4(col, opacity);
-}
 
 half4 main(vec2 fragCoord) {
-    return shaderBlend(fragCoord);
-    //vec2 fragCoord = fragCoord / iResolution.xy * iImageResolution.xy;
-    float iTime = iTime / 8;
+    float iTime = iTime / 9;
     vec2 uv = fragCoord.xy / iImageResolution.xy;
-    vec2 p=(fragCoord.xy - iResolution.xy)/max(iResolution.x,iResolution.y);
-    float2 scale = iImageResolution.xy / iResolution.xy;
+    vec2 p=(fragCoord.xy - iImageResolution.xy)/max(iImageResolution.x,iImageResolution.y);
 
-    for(int i=1;i<15;i++)
+    for(int i=1;i<45;i++)
     {
-        p.x+=(0.5/float(i))*cos(float(i)*p.y+iTime*3.0/8.0+0.03*float(i))+1.3;
-        p.y+=(0.5/float(i))*sin(float(i)*p.x+iTime*4.0/8.0+0.03*float(i+10))+1.2;
+        vec2 newp=p;
+        newp.x+=(0.5/float(i))*cos(float(i)*p.y+iTime*62.0/40.0+0.03*float(i))+1.3;
+        newp.y+=(0.5/float(i))*sin(float(i)*p.x+iTime*82.0/40.0+0.03*float(i+10))+1.2;
+        p=newp;
     }
 
-  	half4 v1 = iImage1.eval(mod(p * (scale / 1.5 + iTime / 100 + 35), iImageResolution.xy));
-  	half4 v2 = shaderBlend(p);
-  	return mix(v2, v1, 0.5);
+  	half4 v1 = blurred(mod(p * (iTime / 100 + 35), iImageResolution.xy));
+  	half4 v2 = shaderBlend(p) / 1.3;
+  	return vec4(mix(v1, v2, clamp(length(v1) - length(v2*1.6), 0.1, 0.8)).xyz, 1);
 }
 )"));
 
@@ -401,9 +359,6 @@ half4 main(float2 fragCoord) {
 
         const auto shaderOrig = builder.makeShader();
         paint.setShader(shaderOrig);
-        //    lastBlurTime = fluidTime;
-
-        //paint.setShader(lastImage->makeShader(SkSamplingOptions{}));
     } else {
         paint.setBlendMode(SkBlendMode::kSrc);
         paint.setColor(SK_ColorTRANSPARENT);

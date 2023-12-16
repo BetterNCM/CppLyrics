@@ -46,7 +46,7 @@ class CppLyricsGLFWWindow {
 
     int kWidth = 400;
     int kHeight = 600;
-    bool limitFPS = false;
+    bool limitFPS = true;
     bool topMost = false;
 
 
@@ -120,7 +120,7 @@ public:
         auto canvas = sSurface->getCanvas();
         canvas->clear(SK_ColorTRANSPARENT);
         cppLyrics.render(canvas, sSurface);
-        sContext->flushAndSubmit(true);
+        sContext->flush();
         glfwSwapBuffers(window);
         doLogic();
         return true;
