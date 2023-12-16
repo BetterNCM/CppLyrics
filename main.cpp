@@ -158,7 +158,7 @@ void CppLyrics::renderScrollingString(SkCanvas &canvas, SkFont &font, SkPaint &p
         const auto padding = 0.5f * fontSize;
         const auto scrollWidth = textWidth + padding * 2.f;
 
-        const auto currentProgress = t / scrollCycle;
+        const auto currentProgress = t - ((int) (t / scrollCycle)) * scrollCycle;
         /* 70% time stop, 30% time scrolling */
         const auto scrollProgress = std::clamp((currentProgress - 0.6f) / 0.4f, 0.f, 1.f);
         const auto scrollX = -scrollWidth * scrollProgress;
