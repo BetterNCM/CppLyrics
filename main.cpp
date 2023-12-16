@@ -1,22 +1,9 @@
 #include "main.h"
 #include <cassert>
 
-#define NOMINMAX
-#include "windows.h"
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include "GLFW/glfw3native.h"
 
 #include "render/DynamicLyricWordRendererNormal.h"
 #include "render/RenderTextWrap.h"
-
-std::shared_ptr<std::vector<LyricLine>> _lines_ref = std::make_shared<std::vector<LyricLine>>();
-std::atomic<float> currentTimeExt = -1.f;
-std::atomic<bool> isPaused = false;
-std::atomic<std::shared_ptr<std::string>> songName = std::make_shared<std::string>();
-std::atomic<std::shared_ptr<std::string>> songArtist = std::make_shared<std::string>();
-std::atomic<std::array<float, 3> *> songColor1 = nullptr;
-std::atomic<std::array<float, 3> *> songColor2 = nullptr;
-sk_sp<SkImage> songCover = nullptr;
 
 
 CppLyrics::~CppLyrics() {
@@ -32,8 +19,6 @@ float CppLyrics::renderLyricLine(
         SkCanvas *canvas, float relativeTime, const LyricLine &line,
         float x, float y, float maxWidth, const SkFont &font,
         const SkFont &layoutFont, const SkFont &fontSubLyrics, float blur, bool overflowScroll) {
-
-
     static const auto renderer = DynamicLyricWordRendererNormal();
     float relativeLineTime = relativeTime - line.start;
     float currentX = x;
@@ -52,12 +37,10 @@ float CppLyrics::renderLyricLine(
 
             float wordWidth = renderer.measureLyricWord(word, font);
             float wordWidthLayout = renderer.measureLyricWord(word, layoutFont);
-            if (currentXLayout + wordWidthLayout - x > maxWidth) {
-                if (!overflowScroll) {
-                    currentX = x;
-                    currentXLayout = x;
-                    currentY += font.getSize() + wordMargin;
-                }
+            if (currentXLayout + wordWidthLayout - x > maxWidth && !overflowScroll) {
+                currentX = x;
+                currentXLayout = x;
+                currentY += font.getSize() + wordMargin;
             }
 
             if (relativeLineTime > word.start && (relativeLineTime < word.end || i == size - 1)) {
@@ -106,6 +89,7 @@ float CppLyrics::renderLyricLine(
         if (useSingleLine) {
             const auto subLyricWidth = fontSubLyrics.measureText(subLyric.c_str(), subLyric.size(), SkTextEncoding::kUTF8);
             const auto offsetX = std::clamp((subLyricWidth - maxWidth) * progress, 0.f, std::max(subLyricWidth - maxWidth, 0.f));
+
             canvas->drawString(subLyric.c_str(), x - offsetX, currentY + fontSubLyrics.getSize(), fontSubLyrics, paint);
             currentY += fontSubLyrics.getSize() + 8.f;
         } else {
@@ -143,9 +127,11 @@ float CppLyrics::estimateLyricLineHeight(
 
     currentY += font.getSize() + subLyricsMarginTop;
 
+    if (useSingleLine) {
+        return currentY + (fontSubLyrics.getSize() + 8.f) * line.subLyrics.size() + marginBottomLyrics;
+    }
     for (const auto &subLyric: line.subLyrics)
         currentY += measureTextWithWrap(fontSubLyrics, fontSubLyrics, maxWidth, subLyric) + 8.f;
-
 
     return currentY + marginBottomLyrics;
 }
@@ -189,7 +175,7 @@ void CppLyrics::renderSongInfo(SkCanvas &canvas, SkFont &font, SkFont &fontMinor
     // draw background glow
     SkPaint paint;
     paint.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, 20.f, true));
-    paint.setColor(SkColorSetARGB(0x60, (int) (*songColor1).at(0), (int) (*songColor1).at(1), (int) (*songColor1).at(2)));
+    paint.setColor(SkColorSetARGB(0x60, (int) (songColor1).at(0), (int) (songColor1).at(1), (int) (songColor1).at(2)));
     canvas.drawPath(path, paint);
 
     // draw image
@@ -236,41 +222,26 @@ void CppLyrics::renderSongInfo(SkCanvas &canvas, SkFont &font, SkFont &fontMinor
     paint.setAntiAlias(true);
     paint.setShader(shader);
     paint.setBlendMode(SkBlendMode::kPlus);
-    renderScrollingString(canvas, font, paint, songInfoWidth, fluidTime, songInfoX, songInfoY, songName.load()->c_str());
+    renderScrollingString(canvas, font, paint, songInfoWidth, fluidTime, songInfoX, songInfoY, songName.c_str());
 
     songInfoY += font.getSize() + (smallMode ? -20.f : -20.f);
     paint.setColor(SkColorSetARGB(80, 255, 255, 255));
-    renderScrollingString(canvas, fontMinorInfo, paint, songInfoWidth, fluidTime, songInfoX, songInfoY, songArtist.load()->c_str());
+    renderScrollingString(canvas, fontMinorInfo, paint, songInfoWidth, fluidTime, songInfoX, songInfoY, songArtist.c_str());
 }
 
 CppLyrics::CppLyrics() {
-}
-void CppLyrics::render(SkCanvas *canvas) {
-    //    double lastTime = glfwGetTime();
-    //    int nbFrames = 0;
-    //    int lastFPS = 0;
-
-    //    float minFPS = 100000.f, maxFPS = 0.f;
-    static sk_sp<SkFontMgr> fontMgr = SkFontMgr::RefDefault();
-    static auto fontFamily = fontMgr->matchFamily("Noto Sans SC");
     // fallback to Microsoft YaHei
     if (!fontFamily->count()) {
-        fontFamily = fontMgr->matchFamily("Microsoft YaHei");
+        fontFamily = sk_sp(fontMgr->matchFamily("Microsoft YaHei"));
     }
-    static const auto typefaceBold = sk_sp(fontFamily->matchStyle(
-            SkFontStyle::Bold()));
-    static const auto typefaceMed = sk_sp(fontFamily->matchStyle(
-            SkFontStyle::Normal()));
+}
+void CppLyrics::render(SkCanvas *canvas) {
 
-    // load ./bg.png
-    //    auto data = SkData::MakeFromFileName("bg.png");
-    //    auto pic = SkImage::MakeFromEncoded(data);
-    //    double lastTimeFrame = glfwGetTime();
+    SkFont boldFont = SkFont(typefaceBold, 60.f);
+    SkFont midFont = SkFont(typefaceMed, 30.f);
 
-    static int lastFocusedLine = -1;
-    static float lastLineHeight = 0.f;
-
-    static float estimatedHeightMap[2000];
+    canvas->drawString("Hello, World!", 100, 100, boldFont, SkPaint());
+    return;
 
     static const auto [effect, err] = SkRuntimeEffect::MakeForShader(SkString(R"(
 uniform float iTime;
@@ -287,42 +258,60 @@ half4 shaderBlend(vec2 fragCoord) {
     return mix(fluidColor1 / 256, fluidColor2 / 256, fragCoord.x / iResolution.x);
 }
 
-const float r = 10;
-const float pi = 3.1415926;
-const float ste = 0.5;
-half4 blurred(float2 fragCoord)
-{
-	vec2 uv = fragCoord.xy / iImageResolution.xy;
-  	half4 t = iImage1.eval(fragCoord.xy);
-	float q=0;
-  	for(float i=-pi;i<pi;i+=ste) {
-    	t+=iImage1.eval(vec2(
-           fragCoord.x + sin(i) * r,
-           fragCoord.y + cos(i) * r
-        ));
-        q++;
-    }
-  	return t / q;
-}
-
-
-half4 main(vec2 fragCoord) {
+half4 main2(vec2 fragCoord) {
     float iTime = iTime / 8;
     vec2 uv = fragCoord.xy / iImageResolution.xy;
-    vec2 p=(fragCoord.xy / 4 - iImageResolution.xy)/max(iImageResolution.x,iImageResolution.y);
+    vec2 p=(fragCoord.xy / 6 - iImageResolution.xy)/max(iImageResolution.x,iImageResolution.y);
     float2 scale = iImageResolution.xy / iResolution.xy;
 
     for(int i=1;i<45;i++)
     {
         vec2 newp=p;
-        newp.x+=(0.5/float(i))*cos(float(i)*p.y+iTime*12.0/8.0+0.03*float(i))+1.3;
-        newp.y+=(0.5/float(i))*cos(float(i)*p.x+iTime*22.0/8.0+0.03*float(i+10))+1.2;
+        newp.x+=(0.5/float(i))*cos(float(i)*p.y+iTime*3.0/8.0+0.03*float(i))+1.3;
+        newp.y+=(0.5/float(i))*sin(float(i)*p.x+iTime*4.0/8.0+0.03*float(i+10))+1.2;
         p=newp;
     }
 
-  	half4 v1 = blurred(mod(p * (scale / 1.5 + iTime / 100 + 35), iImageResolution.xy));
+  	half4 v1 = iImage1.eval(mod(p * (scale / 1.5 + iTime / 100 + 35), iImageResolution.xy));
   	half4 v2 = shaderBlend(p);
   	return vec4(mix(v1, v2, clamp(length(v1) - length(v2*1.6), 0.1, 0.8)).xyz / 1.3, opacity);
+}
+
+const float r = 46.0;
+const float pi = 3.1415;
+const float sigma = 8.0;
+const int kernelSize = 17;
+
+half4 blurred(float2 fragCoord)
+{
+    vec2 uv = fragCoord.xy / iImageResolution.xy;
+    half4 finalColor = half4(0.0);
+
+    float kernel[kernelSize];
+    float totalWeight = 0.0;
+    for (int i = 0; i < kernelSize; ++i) {
+        float x = float(i - (kernelSize / 2));
+        kernel[i] = exp(-(x * x) / (2.0 * sigma * sigma)) / (sqrt(2.0 * pi) * sigma);
+        totalWeight += kernel[i];
+    }
+    for (int i = 0; i < kernelSize; ++i) {
+        kernel[i] /= totalWeight;
+    }
+
+    // 应用高斯模糊
+    for (int i = 0; i < kernelSize; ++i) {
+        float offset = float(i - (kernelSize / 2));
+        vec2 offsetCoord = fragCoord.xy + vec2(offset, 0.0);
+
+        half4 texColor = main2(offsetCoord);
+        finalColor += texColor * kernel[i];
+    }
+
+    return finalColor;
+}
+
+half4 main(vec2 fragCoord) {
+  return blurred(fragCoord);
 }
 )"));
 
@@ -331,14 +320,10 @@ half4 main(vec2 fragCoord) {
         exit(1);
     }
 
-
-    const auto lines = *_lines_ref;
-
     if (lines.size() == 0) {
         return;
     }
 
-    double currentTime = glfwGetTime();
 
     SkPaint paint;
     if (useFluentBg) {
@@ -350,15 +335,10 @@ half4 main(vec2 fragCoord) {
         builder.child("iImage1") = songCover->makeRawShader(SkSamplingOptions{});
         builder.uniform("opacity") = opacity;
         builder.uniform("iImageResolution") = SkV2{(float) songCover->width(), (float) songCover->height()};
-        if (songColor1) {
-            const auto sc1 = *songColor1;
-            const auto sc2 = *songColor2;
-            builder.uniform("fluidColor1") = SkV4{sc1.at(0), sc1.at(1), sc1.at(2), 256};
-            builder.uniform("fluidColor2") = SkV4{sc2.at(0), sc2.at(1), sc2.at(2), 256};
-        } else {
-            builder.uniform("fluidColor1") = SkV4{54, 52, 57, 256};
-            builder.uniform("fluidColor2") = SkV4{255, 52, 0, 256};
-        }
+        const auto sc1 = songColor1;
+        const auto sc2 = songColor2;
+        builder.uniform("fluidColor1") = SkV4{sc1.at(0), sc1.at(1), sc1.at(2), 256};
+        builder.uniform("fluidColor2") = SkV4{sc2.at(0), sc2.at(1), sc2.at(2), 256};
         paint.setBlendMode(SkBlendMode::kSrc);
         paint.setShader(builder.makeShader());
     } else {// use half opacity paint fluidColor1
@@ -366,7 +346,15 @@ half4 main(vec2 fragCoord) {
         paint.setColor(SK_ColorTRANSPARENT);
     }
 
-    canvas->drawPaint(paint);
+    if (useRoundBorder) {
+        SkPath path;
+        path.addRoundRect(
+                SkRect::MakeXYWH(0, 0, kWidth, kHeight),
+                50.f, 50.f);
+        paint.setAntiAlias(true);
+        canvas->drawPath(path, paint);
+    } else
+        canvas->drawPaint(paint);
     //        canvas->drawImage(
     //                pic, 0, 0);
     paint = SkPaint();
@@ -384,7 +372,9 @@ half4 main(vec2 fragCoord) {
         const auto &nextLine = lines[i + 1];
         if (line.start <= t && line.end >= t || nextLine.start >= t) {
             focusedLineNum = i;
-            lyric_ctx.currentLine.animateTo(i);
+            if (lyric_ctx.currentLine.target != i)
+                lyric_ctx.currentLine.animateTo(i);
+
             break;
         }
     }
@@ -411,8 +401,6 @@ half4 main(vec2 fragCoord) {
         lastFocusedLine = focusedLineNum;
     }
 
-    static auto boldFont = SkFont(typefaceBold, 60.f);
-    static auto midFont = SkFont(typefaceMed, 30.f);
 
     if (showSongInfo)
         renderSongInfo(*canvas, boldFont, midFont, smallMode,
@@ -439,6 +427,7 @@ half4 main(vec2 fragCoord) {
                                                          SkFont(typefaceBold, fontSize), layoutFont,
                                                          subLyricFont, 0, useSingleLine);
 
+            // std::cout << lineHeight << " " << lineHeightReal << std::endl;
             assert(std::abs(lineHeight - lineHeightReal) < 1.f);
         }
 
@@ -469,7 +458,7 @@ void CppLyrics::animate(const double deltaTime) {
         t = currentTimeExt;
         currentTimeExt = -1.f;
     } else {
-        if (!isPaused.load())
+        if (!isPaused)
             t += deltaTime;
     }
 
@@ -488,10 +477,10 @@ void CppLyrics::animate(const double deltaTime) {
         lyric_ctx.name.current = lyric_ctx.name.target;                                                   \
     }
 #define DO_ANIMATE_FLOAT_EASE_IN_VELOCITY(name) \
-    lyric_ctx.name.current += (lyric_ctx.name.target - lyric_ctx.name.current) * 0.07f * framePassed;
+    lyric_ctx.name.current += (lyric_ctx.name.target - lyric_ctx.name.current) * lyric_ctx.name.stepPerFrame * framePassed;
 
 #define DO_ANIMATE_FLOAT_HALF(name) \
     lyric_ctx.name.current = (lyric_ctx.name.target + lyric_ctx.name.current) / 2;
 
-    DO_ANIMATE_FLOAT_EASE_IN_OUT(currentLine);
+    DO_ANIMATE_FLOAT_EASE_IN_VELOCITY(currentLine);
 }

@@ -1,19 +1,19 @@
 #pragma once
 
-#include "main.h"
-#include "pch.h"
+#include "../main.h"
+#include "../pch.h"
 
 #if defined(_WIN32)
-#include <windows.h>
+#include <Windows.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include "GLFW/glfw3native.h"
 #endif
 
+//TODO: move implementations to a separate file
 class CppLyricsGLFWWindow {
     GrDirectContext *sContext = nullptr;
     SkSurface *sSurface = nullptr;
     GrBackendRenderTarget backendRenderTarget;
-    CppLyrics cppLyrics;
 
     static void error_callback(int error, const char *description) {
         std::cout << error << " " << description;
@@ -51,6 +51,11 @@ class CppLyricsGLFWWindow {
     int kHeight = 600;
 
 public:
+    CppLyrics cppLyrics;
+    static void initGLFW() {
+        glfwInit();
+        glfwSetErrorCallback(error_callback);
+    }
     // delete copy constructor
     CppLyricsGLFWWindow(const CppLyricsGLFWWindow &cppLyricsGLFWWindow) = delete;
     ~CppLyricsGLFWWindow() {
@@ -66,31 +71,22 @@ public:
             glfwDestroyWindow(window);
         }
     }
-    CppLyricsGLFWWindow() {
-        static std::atomic<bool> isGLFWInited = false;
-        if (!isGLFWInited.exchange(true)) {
-            glfwSetErrorCallback(error_callback);
-            if (!glfwInit()) {
-                std::cout << "glfwInit failed";
-                exit(EXIT_FAILURE);
-            }
-        }
 
+    CppLyricsGLFWWindow() {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_DECORATED, 0);
         glfwWindowHint(GLFW_RESIZABLE, 1);
         glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, 1);
-        window = glfwCreateWindow(kWidth, kHeight, "CppLyrics", nullptr, nullptr);
+        static GLFWwindow *firstWin = nullptr;
+        window = glfwCreateWindow(kWidth, kHeight, "CppLyrics", nullptr, firstWin);
+        if (!firstWin) firstWin = window;
         if (!window) {
             glfwTerminate();
             std::cout << "glfwCreateWindow failed";
             exit(EXIT_FAILURE);
         }
         glfwSetKeyCallback(window, key_callback);
-        glfwMakeContextCurrent(window);
-        glfwSwapInterval(1);
-        init_skia(kWidth, kHeight);
         glfwSetKeyCallback(window, key_callback);
         glfwSetWindowUserPointer(window, this);
         cppLyrics.kHeight = kHeight;
@@ -103,6 +99,8 @@ public:
     double lastAnimeTime = -1;
     double lastFPSUpdateTime = -1;
     int frameCount = 0;
+    GLuint frameBuffer = 0;
+    GLuint renderBuffer = 0;
     void resize(int width, int height) {
         kWidth = width;
         kHeight = height;
@@ -110,20 +108,28 @@ public:
         cppLyrics.kWidth = width;
         init_skia(width, height);
     }
+    bool skia_inited = false;
     bool render() {
         glfwMakeContextCurrent(window);
-        if (glfwWindowShouldClose(window)) {
-            return false;
+        if (!skia_inited) {
+            skia_inited = true;
+            init_skia(kWidth, kHeight);
         }
+
+        if (glfwWindowShouldClose(window))
+            return false;
+
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         auto canvas = sSurface->getCanvas();
         canvas->clear(SK_ColorTRANSPARENT);
         cppLyrics.render(canvas);
-        sContext->flush();
+        sContext->flushAndSubmit(true);
         glfwSwapBuffers(window);
-
-
+        doLogic();
+        return true;
+    }
+    void doLogic() {
         const auto currentTime = glfwGetTime();
         if (lastFPSUpdateTime < 0)
             lastFPSUpdateTime = currentTime;
@@ -140,7 +146,6 @@ public:
         lastAnimeTime = currentTime;
         cppLyrics.animate(deltaTime);
         processKeyEvts(deltaTime);
-        return true;
     }
     GLFWwindow *window = nullptr;
     void processKeyEvts(float deltaTime) {
@@ -197,6 +202,7 @@ public:
             cppLyrics.useSingleLine = true;
             cppLyrics.showTips = false;
             cppLyrics.showSongInfo = false;
+            cppLyrics.useRoundBorder = true;
             cppLyrics.minTextSize = 12.f;
             cppLyrics.maxTextSize = 18.f;
             cppLyrics.subLyricsMarginTop = 4.f;

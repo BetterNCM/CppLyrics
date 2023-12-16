@@ -12,13 +12,13 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 
 add_executable(demo main.h
-        winshit.cpp
-        LyricParser.cpp
-        LyricParser.h
+        entry/demo.cpp
+        parser/LyricParser.cpp
+        parser/LyricParser.h
         Lyric.h
         pch.h
-        Utils.cpp
-        Utils.h
+        utils/Utils.cpp
+        utils/Utils.h
         render/DynamicLyricWordRenderer.h
         render/DynamicLyricWordRendererNormal.h
         external/utf8.cpp
@@ -26,8 +26,8 @@ add_executable(demo main.h
         render/RenderTextWrap.h
         main.cpp
         main.cpp
-        CppLyricsGLFWWindow.cpp
-        CppLyricsGLFWWindow.h
+        backend/CppLyricsGLFWWindow.cpp
+        backend/CppLyricsGLFWWindow.h
 )
 target_compile_options(demo PUBLIC /MT)
 target_link_directories(demo PUBLIC external/skia/out/Release-x86 external/glfw3/cmake-build-release/src)
@@ -36,13 +36,13 @@ target_include_directories(demo PUBLIC external/skia/include external/skia exter
 
 
 add_library(bncm-plugin SHARED main.h
-        bncm.cpp
-        LyricParser.cpp
-        LyricParser.h
+        entry/bncm.cpp
+        parser/LyricParser.cpp
+        parser/LyricParser.h
         Lyric.h
         pch.h
-        Utils.cpp
-        Utils.h
+        utils/Utils.cpp
+        utils/Utils.h
         render/DynamicLyricWordRenderer.h
         render/DynamicLyricWordRendererNormal.h
         external/utf8.cpp
@@ -50,8 +50,8 @@ add_library(bncm-plugin SHARED main.h
         render/RenderTextWrap.h
         main.cpp
         main.cpp
-        CppLyricsGLFWWindow.cpp
-        CppLyricsGLFWWindow.h
+        backend/CppLyricsGLFWWindow.cpp
+        backend/CppLyricsGLFWWindow.h
 )
 target_compile_options(bncm-plugin PUBLIC /MT)
 target_link_directories(bncm-plugin PUBLIC external/skia/out/Release-x86 external/glfw3/cmake-build-release/src)

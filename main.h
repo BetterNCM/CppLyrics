@@ -1,6 +1,6 @@
 #pragma once
 #include "Lyric.h"
-#include "LyricParser.h"
+#include "parser/LyricParser.h"
 #include "pch.h"
 
 
@@ -15,15 +15,22 @@ static const bool enableLowEffect = false;
         canvas->drawLine(0, y, kWidth, y, ___paint); \
     }
 
-// TODO: thread safety is not guaranteed, refactor later
-
-
 class CppLyrics {
+    int lastFocusedLine = -1;
+    float lastLineHeight = 0.f;
+    float estimatedHeightMap[2000];
 
+    sk_sp<SkFontMgr> fontMgr = SkFontMgr::RefDefault();
+    sk_sp<SkFontStyleSet> fontFamily = sk_sp(fontMgr->matchFamily("Noto Sans SC"));
+    const sk_sp<SkTypeface> typefaceBold = sk_sp(fontFamily->matchStyle(
+            SkFontStyle::Bold()));
+    const sk_sp<SkTypeface> typefaceMed = sk_sp(fontFamily->matchStyle(
+            SkFontStyle::Normal()));
 
 public:
     ~CppLyrics();
     CppLyrics(const CppLyrics &cppLyrics) = delete;
+
 
     int kWidth = 630;
     int kHeight = 900;
@@ -32,6 +39,15 @@ public:
     bool showSongInfo = true;
     bool showTips = true;
     float subLyricsMarginTop = 20.f, marginBottomLyrics = 10.f;
+
+    std::vector<LyricLine> lines{};
+    float currentTimeExt = -1.f;
+    bool isPaused = false;
+    std::string songName{};
+    std::string songArtist{};
+    std::array<float, 3> songColor1;
+    std::array<float, 3> songColor2;
+    sk_sp<SkImage> songCover = nullptr;
 
 #define ANIMATED_FLOAT(name, initVal, step) \
     struct name##_t {                       \
@@ -52,7 +68,7 @@ public:
 
     struct LyricRenderContext {
         ANIMATED_FLOAT(offsetY, 0.f, 0.0005f)
-        ANIMATED_FLOAT(currentLine, 0.f, 0.03f)
+        ANIMATED_FLOAT(currentLine, 0.f, 0.18f)
     } lyric_ctx;
 
     constexpr static const float marginBottom = 0.f;
@@ -77,6 +93,7 @@ public:
     bool useFontBlur = false;
     bool useTextResize = false;
     bool useSingleLine = false;
+    bool useRoundBorder = false;
     float opacity = 1;
     void renderScrollingString(SkCanvas &canvas, SkFont &font, SkPaint &paint, int maxWidth, float t, int x, int y, const char *text);
     void renderSongInfo(SkCanvas &canvas, SkFont &font, SkFont &fontMinorInfo, bool smallMode, int maxWidth);

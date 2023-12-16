@@ -4,7 +4,7 @@
 
 #ifndef CORE_UTILS_H
 #define CORE_UTILS_H
-#include "pch.h"
+#include "../pch.h"
 
 class Utils {
 public:

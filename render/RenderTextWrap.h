@@ -11,6 +11,7 @@
 
 
 float renderTextWithWrap(SkCanvas &canvas, const SkPaint &paint, const SkFont &font, const SkFont &layoutFont, float maxWidth, float x, float y, const std::string &text) {
+
     float dx = 0, dy = font.getSize();
 
     utf8_iter iter;
@@ -21,17 +22,16 @@ float renderTextWithWrap(SkCanvas &canvas, const SkPaint &paint, const SkFont &f
         SkRect bounds;
         layoutFont.measureText(c, strlen(c), SkTextEncoding::kUTF8, &bounds);
         SkRect boundsNormal;
+
         font.measureText(c, strlen(c), SkTextEncoding::kUTF8, &boundsNormal);
         if (dx + bounds.width() > maxWidth) {
             canvas.drawSimpleText(currentLineString.c_str(), currentLineString.size(), SkTextEncoding::kUTF8, x, y + dy, font, paint);
-            currentLineString = "";
             dx = 0;
             dy += font.getSize();
         }
         dx += boundsNormal.width() + font.getSize() * 0.13;
         currentLineString += c;
     }
-
     canvas.drawSimpleText(currentLineString.c_str(), currentLineString.size(), SkTextEncoding::kUTF8, x, y + dy, font, paint);
 
     return dy + font.getSize();

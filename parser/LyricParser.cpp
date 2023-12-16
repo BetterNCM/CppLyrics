@@ -3,7 +3,7 @@
 //
 
 #include "LyricParser.h"
-#include "Utils.h"
+#include "../utils/Utils.h"
 std::vector<LyricLine> LyricParser::parse(const std::string &lyric) {
     auto lines = std::vector<LyricLine>();
 

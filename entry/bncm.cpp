@@ -1,8 +1,8 @@
 #define NATIVE_PLUGIN_CPP_EXTENSIONS
 #define NOMINMAX
+#include "../parser/LyricParser.h"
+#include "BetterNCMNativePlugin.h"
 #include "GLFW/glfw3.h"
-#include "J:\Projects\BetterNCM\src\BetterNCMNativePlugin.h"
-#include "LyricParser.h"
 #include "core/SkData.h"
 #include "core/SkImage.h"
 #include <thread>
@@ -14,7 +14,7 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include "GLFW/glfw3native.h"
 
-#include "CppLyricsGLFWWindow.h"
+#include "../backend/CppLyricsGLFWWindow.h"
 
 #include "dwmapi.h"
 #pragma comment(lib, "dwmapi.lib")

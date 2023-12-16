@@ -6,7 +6,9 @@
 #define CORE_PCH_H
 
 #include "GLFW/glfw3.h"
+#include <condition_variable>
 #include <fstream>
+#include <future>
 #include <iostream>
 #include <variant>
 #define SK_GANESH

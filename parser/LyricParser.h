@@ -5,7 +5,7 @@
 #ifndef CORE_LYRICPARSER_H
 #define CORE_LYRICPARSER_H
 
-#include "Lyric.h"
+#include "../Lyric.h"
 #include <string>
 #include <vector>
 
