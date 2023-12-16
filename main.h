@@ -77,6 +77,7 @@ public:
     bool useFontBlur = false;
     bool useTextResize = false;
     bool useSingleLine = true;
+    float opacity = 1;
     void renderScrollingString(SkCanvas &canvas, SkFont &font, SkPaint &paint, int maxWidth, float t, int x, int y, const char *text);
     void renderSongInfo(SkCanvas &canvas, SkFont &font, SkFont &fontMinorInfo, bool smallMode, int maxWidth);
     CppLyrics();

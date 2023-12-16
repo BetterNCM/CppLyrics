@@ -272,6 +272,7 @@ uniform vec2 color2;
 uniform shader iImage1;
 uniform vec4 fluidColor1;
 uniform vec4 fluidColor2;
+uniform float opacity;
 
 half4 shaderBlend(vec2 fragCoord) {
     return mix(fluidColor1 / 256, fluidColor2 / 256, fragCoord.x / iResolution.x);
@@ -297,7 +298,7 @@ half4 blurred(float2 fragCoord)
 
 
 half4 main(vec2 fragCoord) {
-    float iTime = iTime / 19;
+    float iTime = iTime / 8;
     vec2 uv = fragCoord.xy / iImageResolution.xy;
     vec2 p=(fragCoord.xy / 4 - iImageResolution.xy)/max(iImageResolution.x,iImageResolution.y);
     float2 scale = iImageResolution.xy / iResolution.xy;
@@ -305,14 +306,14 @@ half4 main(vec2 fragCoord) {
     for(int i=1;i<45;i++)
     {
         vec2 newp=p;
-        newp.x+=(0.5/float(i))*cos(float(i)*p.y+iTime*12.0/40.0+0.03*float(i))+1.3;
-        newp.y+=(0.5/float(i))*cos(float(i)*p.x+iTime*22.0/40.0+0.03*float(i+10))+1.2;
+        newp.x+=(0.5/float(i))*cos(float(i)*p.y+iTime*12.0/8.0+0.03*float(i))+1.3;
+        newp.y+=(0.5/float(i))*cos(float(i)*p.x+iTime*22.0/8.0+0.03*float(i+10))+1.2;
         p=newp;
     }
 
   	half4 v1 = blurred(mod(p * (scale / 1.5 + iTime / 100 + 35), iImageResolution.xy));
   	half4 v2 = shaderBlend(p);
-  	return min(v1, v2) + v1*0.2;
+  	return vec4(mix(v1, v2, clamp(length(v1) - length(v2*1.6), 0.1, 0.8)).xyz / 1.3, opacity);
 }
 )"));
 
@@ -338,6 +339,7 @@ half4 main(vec2 fragCoord) {
         builder.uniform("iResolution") = SkV2{(float) kWidth, (float) kHeight};
 
         builder.child("iImage1") = songCover->makeRawShader(SkSamplingOptions{});
+        builder.uniform("opacity") = opacity;
         builder.uniform("iImageResolution") = SkV2{(float) songCover->width(), (float) songCover->height()};
         if (songColor1) {
             const auto sc1 = *songColor1;
