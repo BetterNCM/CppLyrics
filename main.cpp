@@ -25,6 +25,9 @@ float CppLyrics::renderLyricLine(
     float currentXLayout = x;
     float currentY = y;
 
+    if (line.subLyrics.size() == 0) {
+        currentY += (fontSubLyrics.getSize() + subLyricsMarginTop + 8.f) / 2;
+    }
 
     if (line.isDynamic) {
         std::vector<LyricWordRenderPos> wordWidths;
@@ -74,6 +77,9 @@ float CppLyrics::renderLyricLine(
         canvas->drawString(std::get<1>(line.lyric).c_str(), x, y, font, paint);
     }
 
+    if (line.subLyrics.size() == 0) {
+        currentY += (fontSubLyrics.getSize() + subLyricsMarginTop + 8.f) / 2;
+    }
 
     currentY += font.getSize() + subLyricsMarginTop;
 
@@ -107,6 +113,9 @@ float CppLyrics::estimateLyricLineHeight(
     float currentX = 0;
     float currentXLayout = 0;
     float currentY = 0;
+    if (line.subLyrics.size() == 0) {
+        currentY += (fontSubLyrics.getSize() + subLyricsMarginTop + 8.f) / 2;
+    }
 
     if (line.isDynamic) {
         for (const auto &word: std::get<0>(line.lyric)) {
@@ -126,12 +135,16 @@ float CppLyrics::estimateLyricLineHeight(
     }
 
     currentY += font.getSize() + subLyricsMarginTop;
+    if (line.subLyrics.size() == 0) {
+        currentY += (fontSubLyrics.getSize() + subLyricsMarginTop + 8.f) / 2;
+    }
 
     if (useSingleLine) {
         return currentY + (fontSubLyrics.getSize() + 8.f) * line.subLyrics.size() + marginBottomLyrics;
     }
     for (const auto &subLyric: line.subLyrics)
         currentY += measureTextWithWrap(fontSubLyrics, fontSubLyrics, maxWidth, subLyric) + 8.f;
+
 
     return currentY + marginBottomLyrics;
 }
@@ -370,9 +383,10 @@ half4 main(float2 fragCoord) {
                 SkRect::MakeXYWH(0, 0, kWidth, kHeight),
                 24.f, 24.f);
         paint.setAntiAlias(true);
-    }
-
-    canvas->drawPaint(paint);
+        canvas->clipPath(path, true);
+        canvas->drawPath(path, paint);
+    } else
+        canvas->drawPaint(paint);
 
     paint = SkPaint();
     paint.setColor(SkColorSetARGB(40, 255, 255, 255));
