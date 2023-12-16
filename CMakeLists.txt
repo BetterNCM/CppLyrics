@@ -13,8 +13,8 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 add_executable(demo main.h
         entry/demo.cpp
-        parser/LyricParser.cpp
-        parser/LyricParser.h
+        data/LyricParser.cpp
+        data/LyricParser.h
         Lyric.h
         pch.h
         utils/Utils.cpp
@@ -28,6 +28,8 @@ add_executable(demo main.h
         main.cpp
         backend/CppLyricsGLFWWindow.cpp
         backend/CppLyricsGLFWWindow.h
+        data/DataSource.cpp
+        data/DataSource.h
 )
 target_compile_options(demo PUBLIC /MT)
 target_link_directories(demo PUBLIC external/skia/out/Release-x86 external/glfw3/cmake-build-release/src)
@@ -37,8 +39,8 @@ target_include_directories(demo PUBLIC external/skia/include external/skia exter
 
 add_library(bncm-plugin SHARED main.h
         entry/bncm.cpp
-        parser/LyricParser.cpp
-        parser/LyricParser.h
+        data/LyricParser.cpp
+        data/LyricParser.h
         Lyric.h
         pch.h
         utils/Utils.cpp
@@ -52,6 +54,8 @@ add_library(bncm-plugin SHARED main.h
         main.cpp
         backend/CppLyricsGLFWWindow.cpp
         backend/CppLyricsGLFWWindow.h
+        data/DataSource.cpp
+        data/DataSource.h
 )
 target_compile_options(bncm-plugin PUBLIC /MT)
 target_link_directories(bncm-plugin PUBLIC external/skia/out/Release-x86 external/glfw3/cmake-build-release/src)

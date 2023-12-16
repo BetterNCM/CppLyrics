@@ -2,7 +2,7 @@
 #include <Windows.h>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
-#include "../parser/LyricParser.h"
+#include "../data/DataSource.h"
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
 #include "core/SkData.h"
@@ -26,19 +26,21 @@ int main() {
     std::stringstream buffer;
     buffer << lyricFile.rdbuf();
     const auto lyricStr = buffer.str();
-    const auto lines = LyricParser::parse(lyricStr);
+
+    const auto dataSource = new DataSource();
+    dataSource->setLyrics(lyricStr);
+    dataSource->setSongInfo("Hard Time", "Seinabo Sey");
+    dataSource->setSongColor(std::array<float, 3>{0, 52, 77}, std::array<float, 3>{4, 54, 56});
+    dataSource->setSongCover(SkImage::MakeFromEncoded(SkData::MakeFromFileName("../cover.jpg")));
+    dataSource->setPaused(false);
+
 
     CppLyricsGLFWWindow::initGLFW();
     const auto image = SkImage::MakeFromEncoded(SkData::MakeFromFileName("../cover.jpg"));
-    std::vector<CppLyricsGLFWWindow> windows{5};
-    for (auto &win: windows) {
-        win.cppLyrics.lines = lines;
-        win.cppLyrics.songName = "Hard Time";
-        win.cppLyrics.songArtist = "Seinabo Sey";
-        win.cppLyrics.songColor1 = std::array<float, 3>{0, 52, 77};
-        win.cppLyrics.songColor2 = std::array<float, 3>{4, 54, 56};
-        win.cppLyrics.songCover = SkImage::MakeFromEncoded(SkData::MakeFromFileName("../cover.jpg"));
-    }
+    std::list<CppLyricsGLFWWindow> windows{};
+    for (int i = 0; i < 1; i++)
+        windows.emplace_back(dataSource);
+
 
     for (auto &win: windows) {
         std::thread([&]() {

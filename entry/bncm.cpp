@@ -1,6 +1,6 @@
 #define NATIVE_PLUGIN_CPP_EXTENSIONS
 #define NOMINMAX
-#include "../parser/LyricParser.h"
+#include "../data/DataSource.h"
 #include "BetterNCMNativePlugin.h"
 #include "GLFW/glfw3.h"
 #include "core/SkData.h"
@@ -19,23 +19,16 @@
 #include "dwmapi.h"
 #pragma comment(lib, "dwmapi.lib")
 
-extern std::shared_ptr<std::vector<LyricLine>> _lines_ref;
-extern std::atomic<float> currentTimeExt;
-extern std::atomic<bool> isPaused;
-extern std::atomic<std::shared_ptr<std::string>> songName;
-extern std::atomic<std::shared_ptr<std::string>> songArtist;
-extern std::atomic<std::array<float, 3> *> songColor1;
-extern std::atomic<std::array<float, 3> *> songColor2;
-extern sk_sp<SkImage> songCover;
-
-
 extern "C" {
 __declspec(dllexport) int BetterNCMPluginMain(BetterNCMNativePlugin::PluginAPI *api) {
     static CppLyricsGLFWWindow *win = nullptr;
+    static DataSource dataSource;
+
     api->addNativeAPI(
             new NativeAPIType[0]{}, 0, "cpplyrics.init", +[](void **args) -> char * {
                 std::thread([&]() {
-                    win = new CppLyricsGLFWWindow();
+                    CppLyricsGLFWWindow::initGLFW();
+                    win = new CppLyricsGLFWWindow(&dataSource);
                     while (win->render()) {
                         glfwPollEvents();
                     }
@@ -48,7 +41,7 @@ __declspec(dllexport) int BetterNCMPluginMain(BetterNCMNativePlugin::PluginAPI *
             },
             1, "cpplyrics.set_lyrics", +[](void **args) -> char * {
                 auto lyrics = std::string(static_cast<char *>(args[0]));
-                *_lines_ref = LyricParser::parse(lyrics);
+                dataSource.setLyrics(lyrics);
                 return nullptr;
             });
 
@@ -58,8 +51,7 @@ __declspec(dllexport) int BetterNCMPluginMain(BetterNCMNativePlugin::PluginAPI *
                     NativeAPIType::Boolean},
             2, "cpplyrics.set_time", +[](void **args) -> char * {
                 double time = **(double **) args;
-                currentTimeExt.exchange(time);
-                isPaused.exchange(**(bool **) (args + 1));
+                dataSource.setCurrentTime(time);
                 return nullptr;
             });
 
@@ -70,8 +62,7 @@ __declspec(dllexport) int BetterNCMPluginMain(BetterNCMNativePlugin::PluginAPI *
             2, "cpplyrics.set_song_info", +[](void **args) -> char * {
                 auto name = std::string(static_cast<char *>(args[0]));
                 auto artist = std::string(static_cast<char *>(args[1]));
-                songName.exchange(std::make_shared<std::string>(name));
-                songArtist.exchange(std::make_shared<std::string>(artist));
+                dataSource.setSongInfo(std::move(name), std::move(artist));
                 return nullptr;
             });
 
@@ -90,8 +81,7 @@ __declspec(dllexport) int BetterNCMPluginMain(BetterNCMNativePlugin::PluginAPI *
                     (*color1)[i] = **(int **) (args + i);
                     (*color2)[i] = **(int **) (args + i + 3);
                 }
-                songColor1.exchange(color1);
-                songColor2.exchange(color2);
+                dataSource.setSongColor(*color1, *color2);
                 return nullptr;
             });
 
@@ -99,10 +89,8 @@ __declspec(dllexport) int BetterNCMPluginMain(BetterNCMNativePlugin::PluginAPI *
             new NativeAPIType[1]{NativeAPIType::String},
             1, "cpplyrics.set_song_cover", +[](void **args) -> char * {
                 const auto data = SkData::MakeFromFileName(static_cast<char *>(args[0]));
-                const auto pic = SkImage::MakeFromEncoded(data);
-                if (songCover != nullptr)
-                    songCover.reset();
-                songCover = pic;
+                auto pic = SkImage::MakeFromEncoded(data);
+                dataSource.setSongCover(pic);
                 return nullptr;
             });
 

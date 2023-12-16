@@ -8,13 +8,10 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include "GLFW/glfw3native.h"
 #endif
-
 //TODO: move implementations to a separate file
 class CppLyricsGLFWWindow {
     GrDirectContext *sContext = nullptr;
     SkSurface *sSurface = nullptr;
-    GrBackendRenderTarget backendRenderTarget;
-
     static void error_callback(int error, const char *description) {
         std::cout << error << " " << description;
     }
@@ -49,6 +46,9 @@ class CppLyricsGLFWWindow {
 
     int kWidth = 400;
     int kHeight = 600;
+    bool limitFPS = false;
+    bool topMost = false;
+
 
 public:
     CppLyrics cppLyrics;
@@ -56,8 +56,7 @@ public:
         glfwInit();
         glfwSetErrorCallback(error_callback);
     }
-    // delete copy constructor
-    CppLyricsGLFWWindow(const CppLyricsGLFWWindow &cppLyricsGLFWWindow) = delete;
+    explicit CppLyricsGLFWWindow(const CppLyricsGLFWWindow &cppLyricsGLFWWindow) = delete;
     ~CppLyricsGLFWWindow() {
         if (sContext) {
             sContext->flushAndSubmit(true);
@@ -71,8 +70,7 @@ public:
             glfwDestroyWindow(window);
         }
     }
-
-    CppLyricsGLFWWindow() {
+    explicit CppLyricsGLFWWindow(DataSource *const &dataSource) : cppLyrics(dataSource) {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_DECORATED, 0);
@@ -99,8 +97,6 @@ public:
     double lastAnimeTime = -1;
     double lastFPSUpdateTime = -1;
     int frameCount = 0;
-    GLuint frameBuffer = 0;
-    GLuint renderBuffer = 0;
     void resize(int width, int height) {
         kWidth = width;
         kHeight = height;
@@ -123,7 +119,7 @@ public:
         glClear(GL_COLOR_BUFFER_BIT);
         auto canvas = sSurface->getCanvas();
         canvas->clear(SK_ColorTRANSPARENT);
-        cppLyrics.render(canvas);
+        cppLyrics.render(canvas, sSurface);
         sContext->flushAndSubmit(true);
         glfwSwapBuffers(window);
         doLogic();
@@ -148,6 +144,7 @@ public:
         processKeyEvts(deltaTime);
     }
     GLFWwindow *window = nullptr;
+
     void processKeyEvts(float deltaTime) {
         if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
             cppLyrics.t += 7.f * deltaTime;
@@ -188,13 +185,18 @@ public:
                 glfwPollEvents();
         }
 
-        //        if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) {
-        //            cppLyrics.showTips = !cppLyrics.showTips;
-        //            while (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
-        //                glfwPollEvents();
-        //        }
+        if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+            limitFPS = !limitFPS;
+            while (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
+                glfwPollEvents();
+            if (limitFPS) {
+                glfwSwapInterval(1);
+            } else {
+                glfwSwapInterval(0);
+            }
+        }
 
-        if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) {
+        if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS && !topMost) {
             // taskbar mode
             cppLyrics.useFluentBg = false;
             cppLyrics.useFontBlur = false;
@@ -208,9 +210,17 @@ public:
             cppLyrics.subLyricsMarginTop = 4.f;
             cppLyrics.marginBottomLyrics = 6.f;
             cppLyrics.wordMargin = 5.f;
+            resize(200, 44);
+            topMost = true;
 #if defined(_WIN32)
             HWND hwnd = glfwGetWin32Window(window);
-            SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+
+            std::thread([hwnd, this]() {
+                while (topMost) {
+                    SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                }
+            }).detach();
 #endif
             while (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
                 glfwPollEvents();

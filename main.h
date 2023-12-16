@@ -1,6 +1,7 @@
 #pragma once
 #include "Lyric.h"
-#include "parser/LyricParser.h"
+#include "data/DataSource.h"
+#include "data/LyricParser.h"
 #include "pch.h"
 
 
@@ -31,7 +32,7 @@ public:
     ~CppLyrics();
     CppLyrics(const CppLyrics &cppLyrics) = delete;
 
-
+    DataSource *dataSource;
     int kWidth = 630;
     int kHeight = 900;
     int lastFPS = 0;
@@ -39,15 +40,6 @@ public:
     bool showSongInfo = true;
     bool showTips = true;
     float subLyricsMarginTop = 20.f, marginBottomLyrics = 10.f;
-
-    std::vector<LyricLine> lines{};
-    float currentTimeExt = -1.f;
-    bool isPaused = false;
-    std::string songName{};
-    std::string songArtist{};
-    std::array<float, 3> songColor1;
-    std::array<float, 3> songColor2;
-    sk_sp<SkImage> songCover = nullptr;
 
 #define ANIMATED_FLOAT(name, initVal, step) \
     struct name##_t {                       \
@@ -97,7 +89,7 @@ public:
     float opacity = 1;
     void renderScrollingString(SkCanvas &canvas, SkFont &font, SkPaint &paint, int maxWidth, float t, int x, int y, const char *text);
     void renderSongInfo(SkCanvas &canvas, SkFont &font, SkFont &fontMinorInfo, bool smallMode, int maxWidth);
-    CppLyrics();
-    void render(SkCanvas *canvas);
+    CppLyrics(DataSource *dataSource);
+    void render(SkCanvas *canvas, SkSurface *);
     void animate(const double deltaTime);
 };
