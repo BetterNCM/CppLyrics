@@ -5,6 +5,7 @@
 #include "render/DynamicLyricWordRendererNormal.h"
 #include "render/RenderTextWrap.h"
 
+static std::mutex textRenderMutex{};
 
 CppLyrics::~CppLyrics() {
 }
@@ -24,6 +25,8 @@ float CppLyrics::renderLyricLine(
     float currentX = x;
     float currentXLayout = x;
     float currentY = y;
+
+    std::lock_guard<std::mutex> lock(textRenderMutex);
 
     if (line.subLyrics.size() == 0) {
         currentY += (fontSubLyrics.getSize() + subLyricsMarginTop + 8.f) / 2;
@@ -170,6 +173,7 @@ void CppLyrics::renderScrollingString(SkCanvas &canvas, SkFont &font, SkPaint &p
     }
 }
 void CppLyrics::renderSongInfo(SkCanvas &canvas, SkFont &font, SkFont &fontMinorInfo, bool smallMode, int maxWidth) {
+    std::lock_guard<std::mutex> lock(textRenderMutex);
     if (dataSource->getSongCover() == nullptr) return;
     const auto pic = dataSource->getSongCover();
     float dx = kWidth / 6 - 100, dy = std::max(kHeight / 2 - 300, 100), dw = std::max(std::clamp(kWidth / 4.f, 200.f, 400.f), std::clamp(kHeight / 4.f, 200.f, 400.f)),
@@ -309,6 +313,7 @@ half4 main(vec2 fragCoord) {
   	half4 v2 = shaderBlend(p) / 1.3;
   	return vec4(mix(v1, v2, clamp(length(v1) - length(v2*1.6), 0.1, 0.8)).xyz, 1);
 }
+
 )"));
 
     static const auto [blurEffect, blurErr] = SkRuntimeEffect::MakeForShader(SkString(R"(
@@ -359,7 +364,7 @@ half4 main(float2 fragCoord) {
                 (float) kWidth,
                 (float) kHeight};
         builder.child("iImage1") = songCover->makeRawShader(SkSamplingOptions{});
-        builder.uniform("opacity") = opacity;
+        // builder.uniform("opacity") = opacity;
         builder.uniform("iImageResolution") = SkV2{
                 (float) songCover->width(),
                 (float) songCover->height()};

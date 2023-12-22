@@ -71,14 +71,18 @@ public:
         }
     }
     explicit CppLyricsGLFWWindow(DataSource *const &dataSource) : cppLyrics(dataSource) {
+        static GLFWwindow *firstWin = nullptr;
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_DECORATED, 0);
         glfwWindowHint(GLFW_RESIZABLE, 1);
         glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, 1);
-        static GLFWwindow *firstWin = nullptr;
+        
         window = glfwCreateWindow(kWidth, kHeight, "CppLyrics", nullptr, firstWin);
         if (!firstWin) firstWin = window;
+    }
+    void initWindow() {
+
         if (!window) {
             glfwTerminate();
             std::cout << "glfwCreateWindow failed";

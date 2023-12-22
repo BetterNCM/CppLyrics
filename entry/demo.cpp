@@ -38,12 +38,13 @@ int main() {
     CppLyricsGLFWWindow::initGLFW();
     const auto image = SkImage::MakeFromEncoded(SkData::MakeFromFileName("../cover.jpg"));
     std::list<CppLyricsGLFWWindow> windows{};
-    for (int i = 0; i < 1; i++)
+    for (int i = 0; i < 5; i++)
         windows.emplace_back(dataSource);
 
 
     for (auto &win: windows) {
         std::thread([&]() {
+            win.initWindow();
             while (win.render())
                 ;
         }).detach();
