@@ -29,7 +29,7 @@ float CppLyrics::renderLyricLine(
     std::lock_guard<std::mutex> lock(textRenderMutex);
 
     if (line.subLyrics.size() == 0) {
-        currentY += (fontSubLyrics.getSize() + subLyricsMarginTop + 8.f) / 2;
+        currentY += (fontSubLyrics.getSize()) / 2;
     }
 
     if (line.isDynamic) {
@@ -81,7 +81,7 @@ float CppLyrics::renderLyricLine(
     }
 
     if (line.subLyrics.size() == 0) {
-        currentY += (fontSubLyrics.getSize() + subLyricsMarginTop + 8.f) / 2;
+        currentY += (fontSubLyrics.getSize()) / 2 + subLyricsMarginTop + 8.f;
     }
 
     currentY += font.getSize() + subLyricsMarginTop;
@@ -249,6 +249,10 @@ void CppLyrics::renderSongInfo(SkCanvas &canvas, SkFont &font, SkFont &fontMinor
 }
 
 void CppLyrics::render(SkCanvas *canvas, SkSurface *surface) {
+
+    canvas->drawString("Hello, World!", 0, 0, SkFont(), SkPaint());
+    return;
+
     if (!dataSource->isFull()) {
         return;
     }

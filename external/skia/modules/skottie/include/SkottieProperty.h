@@ -9,16 +9,20 @@
 #define SkottieProperty_DEFINED
 
 #include "include/core/SkColor.h"
+#include "include/core/SkMatrix.h"
 #include "include/core/SkPaint.h"
 #include "include/core/SkPoint.h"
+#include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
+#include "include/core/SkSpan.h"
 #include "include/core/SkTypeface.h"
 #include "include/utils/SkTextUtils.h"
-#include "modules/skottie/src/text/SkottieShaper.h"
+#include "modules/skottie/include/TextShaper.h"
 
 #include <functional>
+#include <vector>
 
-class SkMatrix;
+class SkCanvas;
 
 namespace sksg {
 
@@ -35,6 +39,25 @@ using OpacityPropertyValue = float;
 enum class TextPaintOrder : uint8_t {
     kFillStroke,
     kStrokeFill,
+};
+
+// Optional callback invoked when drawing text layers.
+// Allows clients to render custom text decorations.
+class GlyphDecorator : public SkRefCnt {
+public:
+    struct GlyphInfo {
+        SkRect   fBounds;  // visual glyph bounds
+        SkMatrix fMatrix;  // glyph matrix
+        size_t   fCluster; // cluster index in the original text string
+        float    fAdvance; // horizontal glyph advance
+    };
+
+    struct TextInfo {
+        SkSpan<const GlyphInfo> fGlyphs;
+        float                   fScale;  // Additional font scale applied by auto-sizing.
+    };
+
+    virtual void onDecorate(SkCanvas*, const TextInfo&) = 0;
 };
 
 struct TextPropertyValue {
@@ -61,6 +84,12 @@ struct TextPropertyValue {
     SkPaint::Join           fStrokeJoin     = SkPaint::Join::kMiter_Join;
     bool                    fHasFill        = false,
                             fHasStroke      = false;
+    sk_sp<GlyphDecorator>   fDecorator;
+                            // The locale to be used for text shaping, in BCP47 form.  This includes
+                            // support for RFC6067 extensions, so one can e.g. select strict line
+                            // breaking rules for certain scripts: ja-u-lb-strict.
+                            // Pass an empty string to use the system locale.
+    SkString                fLocale;
 
     bool operator==(const TextPropertyValue& other) const;
     bool operator!=(const TextPropertyValue& other) const;
@@ -78,7 +107,7 @@ struct TransformPropertyValue {
     bool operator!=(const TransformPropertyValue& other) const;
 };
 
-namespace internal { class AnimationBuilder; }
+namespace internal { class SceneGraphRevalidator; }
 
 /**
  * Property handles are adapters between user-facing AE model/values
@@ -87,14 +116,20 @@ namespace internal { class AnimationBuilder; }
 template <typename ValueT, typename NodeT>
 class SK_API PropertyHandle final {
 public:
-    explicit PropertyHandle(sk_sp<NodeT> node) : fNode(std::move(node)) {}
+    explicit PropertyHandle(sk_sp<NodeT>);
+    PropertyHandle(sk_sp<NodeT> node, sk_sp<internal::SceneGraphRevalidator> revalidator)
+        : fNode(std::move(node))
+        , fRevalidator(std::move(revalidator)) {}
     ~PropertyHandle();
+
+    PropertyHandle(const PropertyHandle&);
 
     ValueT get() const;
     void set(const ValueT&);
 
 private:
-    const sk_sp<NodeT> fNode;
+    const sk_sp<NodeT>                           fNode;
+    const sk_sp<internal::SceneGraphRevalidator> fRevalidator;
 };
 
 namespace internal {

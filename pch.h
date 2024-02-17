@@ -5,7 +5,9 @@
 #ifndef CORE_PCH_H
 #define CORE_PCH_H
 
-#include "GLFW/glfw3.h"
+#include <dawn/webgpu_cpp.h>
+#include <webgpu/webgpu_glfw.h>
+
 #include <condition_variable>
 #include <fstream>
 #include <future>
@@ -13,6 +15,8 @@
 #include <variant>
 #define SK_GANESH
 #define SK_GL
+
+#include "GLFW/glfw3.h"
 
 
 //#define GL_FRAMEBUFFER_SRGB 0x8DB9
@@ -25,6 +29,7 @@
 
 #include "include/codec/SkCodec.h"
 #include "include/core/SkBitmap.h"
+#include "include/core/SkBlurTypes.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkColorSpace.h"
 #include "include/core/SkData.h"
@@ -37,10 +42,5 @@
 #include "include/core/SkTextBlob.h"
 #include "include/effects/SkGradientShader.h"
 #include "include/effects/SkRuntimeEffect.h"
-
-#include "src/core/SkMask.h"
-
-#include "modules/skparagraph/include/Paragraph.h"
-#include "modules/skparagraph/include/ParagraphBuilder.h"
 
 #endif//CORE_PCH_H

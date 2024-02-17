@@ -8,16 +8,27 @@
 #ifndef SkFont_DEFINED
 #define SkFont_DEFINED
 
-#include "include/core/SkFontTypes.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkTypeface.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkTo.h"
+#include "include/private/base/SkTypeTraits.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 class SkMatrix;
 class SkPaint;
 class SkPath;
+enum class SkFontHinting;
+enum class SkTextEncoding;
 struct SkFontMetrics;
+struct SkPoint;
 
 /** \class SkFont
     SkFont controls options applied when drawing and measuring text.
@@ -198,14 +209,6 @@ public:
     */
     SkTypeface* getTypeface() const {return fTypeface.get(); }
 
-    /** Returns SkTypeface if set, or the default typeface.
-        Does not alter SkTypeface SkRefCnt.
-
-        @return  SkTypeface if previously set or, a pointer to the default typeface if not
-        previously set.
-    */
-    SkTypeface* getTypefaceOrDefault() const;
-
     /** Returns text size in points.
 
         @return  typographic height of text
@@ -232,20 +235,13 @@ public:
     */
     sk_sp<SkTypeface> refTypeface() const { return fTypeface; }
 
-    /** Increases SkTypeface SkRefCnt by one.
-
-        @return  SkTypeface if previously set or, a pointer to the default typeface if not
-        previously set.
-    */
-    sk_sp<SkTypeface> refTypefaceOrDefault() const;
-
     /** Sets SkTypeface to typeface, decreasing SkRefCnt of the previous SkTypeface.
         Pass nullptr to clear SkTypeface and use the default typeface. Increments
         tf SkRefCnt by one.
 
         @param tf  font and style used to draw text
     */
-    void setTypeface(sk_sp<SkTypeface> tf) { fTypeface = tf; }
+    void setTypeface(sk_sp<SkTypeface> tf) { fTypeface = std::move(tf); }
 
     /** Sets text size in points.
         Has no effect if textSize is not greater than or equal to zero.
@@ -331,7 +327,7 @@ public:
         @param text        character storage encoded with SkTextEncoding
         @param byteLength  length of character storage in bytes
         @param bounds      returns bounding box relative to (0, 0) if not nullptr
-        @return            number of glyphs represented by text of length byteLength
+        @return            the sum of the default advance widths
     */
     SkScalar measureText(const void* text, size_t byteLength, SkTextEncoding encoding,
                          SkRect* bounds = nullptr) const {
@@ -347,7 +343,7 @@ public:
         @param byteLength  length of character storage in bytes
         @param bounds      returns bounding box relative to (0, 0) if not nullptr
         @param paint       optional; may be nullptr
-        @return            number of glyphs represented by text of length byteLength
+        @return            the sum of the default advance widths
     */
     SkScalar measureText(const void* text, size_t byteLength, SkTextEncoding encoding,
                          SkRect* bounds, const SkPaint* paint) const;
@@ -498,6 +494,8 @@ public:
      */
     void dump() const;
 
+    using sk_is_trivially_relocatable = std::true_type;
+
 private:
     enum PrivFlags {
         kForceAutoHinting_PrivFlag      = 1 << 0,
@@ -523,13 +521,18 @@ private:
     uint8_t     fEdging;
     uint8_t     fHinting;
 
+    static_assert(::sk_is_trivially_relocatable<decltype(fTypeface)>::value);
+
     SkScalar setupForAsPaths(SkPaint*);
     bool hasSomeAntiAliasing() const;
 
     friend class SkFontPriv;
-    friend class SkGlyphRunListPainter;
+    friend class SkGlyphRunListPainterCPU;
     friend class SkStrikeSpec;
     friend class SkRemoteGlyphCacheTest;
+
+    sk_sp<SkTypeface> refTypefaceOrDefault() const;
+    SkTypeface* getTypefaceOrDefault() const;
 };
 
 #endif

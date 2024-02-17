@@ -11,15 +11,16 @@
 #include "include/core/SkData.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkScalar.h"
-#include "include/private/SkTo.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkCPUTypes.h"
+#include "include/private/base/SkTo.h"
 
-#include <memory.h>
-
-class SkStream;
-class SkStreamRewindable;
-class SkStreamSeekable;
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <memory>
+#include <utility>
 class SkStreamAsset;
-class SkStreamMemory;
 
 /**
  *  SkStream -- abstraction for a source of bytes. Subclasses can be backed by
@@ -80,27 +81,30 @@ public:
     virtual size_t peek(void* /*buffer*/, size_t /*size*/) const { return 0; }
 
     /** Returns true when all the bytes in the stream have been read.
+     *  As SkStream represents synchronous I/O, isAtEnd returns false when the
+     *  final stream length isn't known yet, even when all the bytes available
+     *  so far have been read.
      *  This may return true early (when there are no more bytes to be read)
      *  or late (after the first unsuccessful read).
      */
     virtual bool isAtEnd() const = 0;
 
-    bool SK_WARN_UNUSED_RESULT readS8(int8_t*);
-    bool SK_WARN_UNUSED_RESULT readS16(int16_t*);
-    bool SK_WARN_UNUSED_RESULT readS32(int32_t*);
+    [[nodiscard]] bool readS8(int8_t*);
+    [[nodiscard]] bool readS16(int16_t*);
+    [[nodiscard]] bool readS32(int32_t*);
 
-    bool SK_WARN_UNUSED_RESULT readU8(uint8_t* i) { return this->readS8((int8_t*)i); }
-    bool SK_WARN_UNUSED_RESULT readU16(uint16_t* i) { return this->readS16((int16_t*)i); }
-    bool SK_WARN_UNUSED_RESULT readU32(uint32_t* i) { return this->readS32((int32_t*)i); }
+    [[nodiscard]] bool readU8(uint8_t* i) { return this->readS8((int8_t*)i); }
+    [[nodiscard]] bool readU16(uint16_t* i) { return this->readS16((int16_t*)i); }
+    [[nodiscard]] bool readU32(uint32_t* i) { return this->readS32((int32_t*)i); }
 
-    bool SK_WARN_UNUSED_RESULT readBool(bool* b) {
+    [[nodiscard]] bool readBool(bool* b) {
         uint8_t i;
         if (!this->readU8(&i)) { return false; }
         *b = (i != 0);
         return true;
     }
-    bool SK_WARN_UNUSED_RESULT readScalar(SkScalar*);
-    bool SK_WARN_UNUSED_RESULT readPackedUInt(size_t*);
+    [[nodiscard]] bool readScalar(SkScalar*);
+    [[nodiscard]] bool readPackedUInt(size_t*);
 
 //SkStreamRewindable
     /** Rewinds to the beginning of the stream. Returns true if the stream is known
@@ -122,7 +126,7 @@ public:
     }
 
 //SkStreamSeekable
-    /** Returns true if this stream can report it's current position. */
+    /** Returns true if this stream can report its current position. */
     virtual bool hasPosition() const { return false; }
     /** Returns the current position in the stream. If this cannot be done, returns 0. */
     virtual size_t getPosition() const { return 0; }
@@ -140,7 +144,7 @@ public:
     virtual bool move(long /*offset*/) { return false; }
 
 //SkStreamAsset
-    /** Returns true if this stream can report it's total length. */
+    /** Returns true if this stream can report its total length. */
     virtual bool hasLength() const { return false; }
     /** Returns the total length of the stream. If this cannot be done, returns 0. */
     virtual size_t getLength() const { return 0; }
@@ -255,10 +259,10 @@ public:
 
     bool writeText(const char text[]) {
         SkASSERT(text);
-        return this->write(text, strlen(text));
+        return this->write(text, std::strlen(text));
     }
 
-    bool newline() { return this->write("\n", strlen("\n")); }
+    bool newline() { return this->write("\n", std::strlen("\n")); }
 
     bool writeDecAsText(int32_t);
     bool writeBigDecAsText(int64_t, int minDigits = 0);
@@ -295,8 +299,6 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////
-
-#include <stdio.h>
 
 /** A stream that wraps a C FILE* file stream. */
 class SK_API SkFILEStream : public SkStreamAsset {

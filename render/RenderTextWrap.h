@@ -11,7 +11,6 @@
 
 
 float renderTextWithWrap(SkCanvas &canvas, const SkPaint &paint, const SkFont &font, const SkFont &layoutFont, float maxWidth, float x, float y, const std::string &text) {
-
     float dx = 0, dy = font.getSize();
 
     utf8_iter iter;

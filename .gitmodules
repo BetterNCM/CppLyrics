@@ -2,3 +2,6 @@
 	path = external/glfw3
 	url = https://github.com/CybernetHacker14/glfw.git
 	branch = win32-borderless
+[submodule "external/--force"]
+	path = external/--force
+	url = https://dawn.googlesource.com/dawn

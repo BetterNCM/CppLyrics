@@ -16,9 +16,12 @@
 #include "dwmapi.h"
 #pragma comment(lib, "dwmapi.lib")
 
-#include "../backend/CppLyricsGLFWWindow.h"
+#include "../backend/CppLyricsGLFWVulkanWindow.h"
 
 int main() {
+    CppLyricsGLFWVulkanWindow::initGLFW();
+    CppLyricsGLFWVulkanWindow::initDawn();
+
     // set self to high priority
     SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 
@@ -31,27 +34,31 @@ int main() {
     dataSource->setLyrics(lyricStr);
     dataSource->setSongInfo("Hard Time", "Seinabo Sey");
     dataSource->setSongColor(std::array<float, 3>{0, 52, 77}, std::array<float, 3>{4, 54, 56});
-    dataSource->setSongCover(SkImage::MakeFromEncoded(SkData::MakeFromFileName("../cover.jpg")));
+    dataSource->setSongCover(SkImages::DeferredFromEncodedData(SkData::MakeFromFileName("../cover.jpg")));
     dataSource->setPaused(false);
 
+    const auto image = SkImages::DeferredFromEncodedData(SkData::MakeFromFileName("../cover.jpg"));
 
-    CppLyricsGLFWWindow::initGLFW();
-    const auto image = SkImage::MakeFromEncoded(SkData::MakeFromFileName("../cover.jpg"));
-    std::list<CppLyricsGLFWWindow> windows{};
-    for (int i = 0; i < 5; i++)
-        windows.emplace_back(dataSource);
+    //    std::list<CppLyricsGLFWVulkanWindow> windows{};
+    //    for (int i = 0; i < 1; i++)
+    //        windows.emplace_back(dataSource);
 
+    auto win = CppLyricsGLFWVulkanWindow(dataSource);
+    win.initWindow();
+    while (win.render())
+        glfwPollEvents();
 
-    for (auto &win: windows) {
-        std::thread([&]() {
-            win.initWindow();
-            while (win.render())
-                ;
-        }).detach();
-    }
+    //    for (auto &win: windows) {
+    //        std::thread([&]() {
+    //            win.initWindow();
+    //            while (win.render())
+    //                glfwPollEvents();
+    //        }).detach();
+    //    }
 
     while (1) {
-        glfwPollEvents();
+        //            glfwPollEvents();
+        Sleep(10000);
     }
 }
 

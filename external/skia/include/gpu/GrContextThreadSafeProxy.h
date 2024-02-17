@@ -10,9 +10,10 @@
 
 #include "include/core/SkRefCnt.h"
 
-#if SK_SUPPORT_GPU
+#if defined(SK_GANESH)
 
 #include "include/core/SkImageInfo.h"
+#include "include/gpu/GpuTypes.h"
 #include "include/gpu/GrContextOptions.h"
 #include "include/gpu/GrTypes.h"
 
@@ -21,11 +22,13 @@
 class GrBackendFormat;
 class GrCaps;
 class GrContextThreadSafeProxyPriv;
-class GrTextBlobRedrawCoordinator;
+class GrSurfaceCharacterization;
 class GrThreadSafeCache;
 class GrThreadSafePipelineBuilder;
-class SkSurfaceCharacterization;
 class SkSurfaceProps;
+enum class SkTextureCompressionType;
+
+namespace sktext::gpu { class TextBlobRedrawCoordinator; }
 
 /**
  * Can be used to perform actions related to the generating GrContext in a thread safe manner. The
@@ -82,7 +85,7 @@ public:
      *                                         willUseGLFBO0 = false
      *                                         vkRTSupportsInputAttachment = false
      */
-    SkSurfaceCharacterization createCharacterization(
+    GrSurfaceCharacterization createCharacterization(
                                   size_t cacheMaxResourceBytes,
                                   const SkImageInfo& ii,
                                   const GrBackendFormat& backendFormat,
@@ -99,20 +102,20 @@ public:
     /*
      * Retrieve the default GrBackendFormat for a given SkColorType and renderability.
      * It is guaranteed that this backend format will be the one used by the following
-     * SkColorType and SkSurfaceCharacterization-based createBackendTexture methods.
+     * SkColorType and GrSurfaceCharacterization-based createBackendTexture methods.
      *
      * The caller should check that the returned format is valid.
      */
     GrBackendFormat defaultBackendFormat(SkColorType ct, GrRenderable renderable) const;
 
     /**
-     * Retrieve the GrBackendFormat for a given SkImage::CompressionType. This is
+     * Retrieve the GrBackendFormat for a given SkTextureCompressionType. This is
      * guaranteed to match the backend format used by the following
      * createCompressedBackendTexture methods that take a CompressionType.
      *
      * The caller should check that the returned format is valid.
      */
-    GrBackendFormat compressedBackendFormat(SkImage::CompressionType c) const;
+    GrBackendFormat compressedBackendFormat(SkTextureCompressionType c) const;
 
     /**
      * Gets the maximum supported sample count for a color type. 1 is returned if only non-MSAA
@@ -149,17 +152,17 @@ private:
     // `init` method on GrContext_Base).
     void init(sk_sp<const GrCaps>, sk_sp<GrThreadSafePipelineBuilder>);
 
-    const GrBackendApi                           fBackend;
-    const GrContextOptions                       fOptions;
-    const uint32_t                               fContextID;
-    sk_sp<const GrCaps>                          fCaps;
-    std::unique_ptr<GrTextBlobRedrawCoordinator> fTextBlobRedrawCoordinator;
-    std::unique_ptr<GrThreadSafeCache>           fThreadSafeCache;
-    sk_sp<GrThreadSafePipelineBuilder>           fPipelineBuilder;
-    std::atomic<bool>                            fAbandoned{false};
+    const GrBackendApi                                      fBackend;
+    const GrContextOptions                                  fOptions;
+    const uint32_t                                          fContextID;
+    sk_sp<const GrCaps>                                     fCaps;
+    std::unique_ptr<sktext::gpu::TextBlobRedrawCoordinator> fTextBlobRedrawCoordinator;
+    std::unique_ptr<GrThreadSafeCache>                      fThreadSafeCache;
+    sk_sp<GrThreadSafePipelineBuilder>                      fPipelineBuilder;
+    std::atomic<bool>                                       fAbandoned{false};
 };
 
-#else // !SK_SUPPORT_GPU
+#else // !defined(SK_GANESH)
 class SK_API GrContextThreadSafeProxy final : public SkNVRefCnt<GrContextThreadSafeProxy> {};
 #endif
 
