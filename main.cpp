@@ -250,7 +250,11 @@ void CppLyrics::renderSongInfo(SkCanvas &canvas, SkFont &font, SkFont &fontMinor
 
 void CppLyrics::render(SkCanvas *canvas, SkSurface *surface) {
 
-    canvas->drawString("Hello, World!", 0, 0, SkFont(), SkPaint());
+  canvas->clear(SK_ColorGRAY);
+SkPaint paint;
+paint.setColor(SK_ColorRED);
+SkRect rect = SkRect::MakeXYWH(0, 0, 5000, 5000);
+canvas->drawRect(rect, paint);
     return;
 
     if (!dataSource->isFull()) {
