@@ -66,6 +66,7 @@ add_library(bncm-plugin SHARED main.h
         vk-bootstrap/VkBootstrap.h
         vk-bootstrap/VkBootstrap.cpp
         vk-bootstrap/VkBootstrapDispatch.h
+        backend/CppLyricsGLFWVulkanWindow.cpp
 )
 target_link_directories(bncm-plugin PUBLIC external/skia/prebuilt external/glfw3/cmake-build-release/src external/vulkan/Lib32)
 target_link_libraries(bncm-plugin PUBLIC skia)

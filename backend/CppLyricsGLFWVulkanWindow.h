@@ -4,6 +4,7 @@
 #include "../pch.h"
 
 #define SK_DAWN
+
 #include "dawn/dawn_proc.h"
 
 #include "include/core/SkPicture.h"
@@ -16,29 +17,36 @@
 #include "include/gpu/graphite/dawn/DawnBackendContext.h"
 #include "include/gpu/graphite/dawn/DawnTypes.h"
 #include "include/gpu/graphite/dawn/DawnUtils.h"
+
 #if defined(_WIN32)
+
 #include <Windows.h>
+
 #define GLFW_EXPOSE_NATIVE_WIN32
+
 #include "../cmake-build-release/external/dawn/gen/include/dawn/dawn_proc_table.h"
 #include "GLFW/glfw3native.h"
 #include "dawn/native/DawnNative.h"
+
 #endif
 
 #include "include/gpu/graphite/dawn/DawnBackendContext.h"
 
-wgpu::Instance instance;
 //TODO: move implementations to a separate file
 class CppLyricsGLFWVulkanWindow {
+    static wgpu::Instance instance;
     wgpu::Surface surface;
-    wgpu::Device device;
+    static wgpu::Device device;
     wgpu::SwapChain swapChain;
     std::unique_ptr<skgpu::graphite::Context> skiaCtx;
     std::unique_ptr<skgpu::graphite::Recorder> recorder;
     sk_sp<SkColorSpace> colorSpace;
     SkSurfaceProps props;
+
     static void error_callback(int error, const char *description) {
         std::cout << error << " " << description;
     }
+
     static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
             glfwSetWindowShouldClose(window, GL_TRUE);
@@ -57,7 +65,7 @@ class CppLyricsGLFWVulkanWindow {
         swapChain = device.CreateSwapChain(surface, &scDesc);
     }
 
-    void GetDevice(std::function<void(wgpu::Device)> callback) {
+    static void GetDevice(std::function<void(wgpu::Device)> callback) {
         instance.RequestAdapter(
                 nullptr,
                 [](WGPURequestAdapterStatus status, WGPUAdapter cAdapter,
@@ -99,13 +107,13 @@ class CppLyricsGLFWVulkanWindow {
 
         devicePromise.get_future().wait();
         device.SetLoggingCallback([](WGPULoggingType type, char const *message, void *) {
-            std::cout << message << std::endl;
-        },
+                                      std::cout << message << std::endl;
+                                  },
                                   nullptr);
 
         device.SetUncapturedErrorCallback([](WGPUErrorType type, char const *message, void *) {
-            std::cerr << message << std::endl;
-        },
+                                              std::cerr << message << std::endl;
+                                          },
                                           nullptr);
 
         SetupSwapChain(surface);
@@ -135,6 +143,7 @@ class CppLyricsGLFWVulkanWindow {
 
 public:
     CppLyrics cppLyrics;
+
     static void initGLFW() {
         glfwInit();
         glfwSetErrorCallback(error_callback);
@@ -150,11 +159,13 @@ public:
     }
 
     explicit CppLyricsGLFWVulkanWindow(const CppLyricsGLFWVulkanWindow &cppLyricsGLFWWindow) = delete;
+
     ~CppLyricsGLFWVulkanWindow() {
         if (window) {
             glfwDestroyWindow(window);
         }
     }
+
     explicit CppLyricsGLFWVulkanWindow(DataSource *const &dataSource) : cppLyrics(dataSource) {
         static GLFWwindow *firstWin = nullptr;
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -170,6 +181,7 @@ public:
 
         init_dawn_for_win();
     }
+
     void initWindow() {
 
         if (!window) {
@@ -187,9 +199,11 @@ public:
             cppLyricsWin->resize(width, height);
         });
     }
+
     double lastAnimeTime = -1;
     double lastFPSUpdateTime = -1;
     int frameCount = 0;
+
     void resize(int width, int height) {
         kWidth = width;
         kHeight = height;
@@ -197,7 +211,9 @@ public:
         cppLyrics.kWidth = width;
         SetupSwapChain(surface);
     }
+
     bool skia_inited = false;
+
     bool render() {
         if (!skia_inited) {
             skia_inited = true;
@@ -226,7 +242,7 @@ public:
                 SkRect::MakeXYWH(0, 0, surf->imageInfo().bounds().width(),
                                  surf->imageInfo().bounds().height()),
                 paint);
-                
+
         //        std::cout << "Width: " << surf->imageInfo().bounds().width() << ", Height: " << surf->imageInfo().bounds().height() << "\n";
 
         //        canvas->drawRect(
@@ -258,6 +274,7 @@ public:
         doLogic();
         return true;
     }
+
     void doLogic() {
         const auto currentTime = glfwGetTime();
         if (lastFPSUpdateTime < 0)
@@ -276,6 +293,7 @@ public:
         cppLyrics.animate(deltaTime);
         processKeyEvts(deltaTime);
     }
+
     GLFWwindow *window = nullptr;
 
     void processKeyEvts(float deltaTime) {
@@ -290,7 +308,8 @@ public:
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 #if defined(_WIN32)
             HWND hwnd = glfwGetWin32Window(window);
-            SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW);
+            SetWindowLong(hwnd, GWL_EXSTYLE,
+                          GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW);
 #endif
         }
 
