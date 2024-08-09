@@ -1,7 +1,9 @@
 #define NOMINMAX
+
 #include <Windows.h>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
+
 #include "../data/DataSource.h"
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
@@ -14,6 +16,7 @@
 #include <thread>
 
 #include "dwmapi.h"
+
 #pragma comment(lib, "dwmapi.lib")
 
 #include "../backend/CppLyricsGLFWVulkanWindow.h"
@@ -34,31 +37,17 @@ int main() {
     dataSource->setLyrics(lyricStr);
     dataSource->setSongInfo("Hard Time", "Seinabo Sey");
     dataSource->setSongColor(std::array<float, 3>{0, 52, 77}, std::array<float, 3>{4, 54, 56});
-    dataSource->setSongCover(SkImages::DeferredFromEncodedData(SkData::MakeFromFileName("../cover.jpg")));
+    dataSource->setSongCover(SkImages::DeferredFromEncodedData(SkData::MakeFromFileName("./cover.jpg")));
     dataSource->setPaused(false);
 
-    const auto image = SkImages::DeferredFromEncodedData(SkData::MakeFromFileName("../cover.jpg"));
+    std::list<CppLyricsGLFWVulkanWindow> windows{};
+    for (int i = 0; i < 1; i++)
+        windows.emplace_back(dataSource);
 
-    //    std::list<CppLyricsGLFWVulkanWindow> windows{};
-    //    for (int i = 0; i < 1; i++)
-    //        windows.emplace_back(dataSource);
-
-    auto win = CppLyricsGLFWVulkanWindow(dataSource);
-    win.initWindow();
-    while (win.render())
-        glfwPollEvents();
-
-    //    for (auto &win: windows) {
-    //        std::thread([&]() {
-    //            win.initWindow();
-    //            while (win.render())
-    //                glfwPollEvents();
-    //        }).detach();
-    //    }
-
-    while (1) {
-        //            glfwPollEvents();
-        Sleep(10000);
+    for (auto &win: windows) {
+        win.initWindow();
+        while (win.render())
+            glfwPollEvents();
     }
 }
 

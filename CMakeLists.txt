@@ -33,6 +33,7 @@ add_executable(demo main.h
         data/DataSource.cpp
         data/DataSource.h
         backend/CppLyricsGLFWVulkanWindow.h
+        backend/CppLyricsGLFWVulkanWindow.cpp
         vk-bootstrap/VkBootstrap.h
         vk-bootstrap/VkBootstrap.cpp
         vk-bootstrap/VkBootstrapDispatch.h

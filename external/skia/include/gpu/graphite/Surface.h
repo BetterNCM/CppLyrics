@@ -16,12 +16,12 @@ class SkImage;
 struct SkImageInfo;
 
 namespace skgpu::graphite {
-class BackendTexture;
-class Recorder;
-}  // namespace skgpu::graphite
+    class BackendTexture;
+    class Recorder;
+}// namespace skgpu::graphite
 
 namespace SkSurfaces {
-/**
+    /**
  * The 'asImage' and 'makeImageCopy' API/entry points are currently only available for
  * Graphite.
  *
@@ -42,23 +42,23 @@ namespace SkSurfaces {
  *
  * In Graphite, the legacy API call (i.e., makeImageSnapshot) will just always make a copy.
  */
-SK_API sk_sp<SkImage> AsImage(sk_sp<const SkSurface>);
-SK_API sk_sp<SkImage> AsImageCopy(sk_sp<const SkSurface>,
-                                  const SkIRect* subset = nullptr,
-                                  skgpu::Mipmapped = skgpu::Mipmapped::kNo);
+    SK_API sk_sp<SkImage> AsImage(sk_sp<const SkSurface>);
+    SK_API sk_sp<SkImage> AsImageCopy(sk_sp<const SkSurface>,
+                                      const SkIRect *subset = nullptr,
+                                      skgpu::Mipmapped = skgpu::Mipmapped::kNo);
 
-/**
+    /**
  * In Graphite, while clients hold a ref on an SkSurface, the backing gpu object does _not_
  * count against the budget. Once an SkSurface is freed, the backing gpu object may or may
  * not become a scratch (i.e., reusable) resource but, if it does, it will be counted against
  * the budget.
  */
-SK_API sk_sp<SkSurface> RenderTarget(skgpu::graphite::Recorder*,
-                                     const SkImageInfo& imageInfo,
-                                     skgpu::Mipmapped = skgpu::Mipmapped::kNo,
-                                     const SkSurfaceProps* surfaceProps = nullptr);
+    SK_API sk_sp<SkSurface> RenderTarget(skgpu::graphite::Recorder *,
+                                         const SkImageInfo &imageInfo,
+                                         skgpu::Mipmapped = skgpu::Mipmapped::kNo,
+                                         const SkSurfaceProps *surfaceProps = nullptr);
 
-/**
+    /**
  * Wraps a GPU-backed texture in an SkSurface. Depending on the backend gpu API, the caller may
  * be required to ensure the texture is valid for the lifetime of the returned SkSurface. The
  * required lifetimes for the specific apis are:
@@ -71,11 +71,11 @@ SK_API sk_sp<SkSurface> RenderTarget(skgpu::graphite::Recorder*,
  * backendTexture's width and height must not exceed the recorder's capabilities, and the
  * recorder must be able to support the back-end texture.
  */
-SK_API sk_sp<SkSurface> WrapBackendTexture(skgpu::graphite::Recorder*,
-                                           const skgpu::graphite::BackendTexture&,
-                                           SkColorType colorType,
-                                           sk_sp<SkColorSpace> colorSpace,
-                                           const SkSurfaceProps* props);
-}  // namespace SkSurfaces
+    SK_API sk_sp<SkSurface> WrapBackendTexture(skgpu::graphite::Recorder *,
+                                               const skgpu::graphite::BackendTexture &,
+                                               SkColorType colorType,
+                                               sk_sp<SkColorSpace> colorSpace,
+                                               const SkSurfaceProps *props);
+}// namespace SkSurfaces
 
-#endif  // skgpu_graphite_Surface_DEFINED
+#endif// skgpu_graphite_Surface_DEFINED
