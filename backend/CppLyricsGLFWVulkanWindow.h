@@ -95,27 +95,6 @@ class CppLyricsGLFWVulkanWindow {
     }
 
     void init_dawn_for_win() {
-        std::promise<void> devicePromise;
-
-        std::async(std::launch::async, [this, &devicePromise]() {
-            GetDevice([&](wgpu::Device device) {
-                std::cout << "Device created\n";
-                this->device = device;
-                devicePromise.set_value();
-            });
-        });
-
-        devicePromise.get_future().wait();
-        device.SetLoggingCallback([](WGPULoggingType type, char const *message, void *) {
-                                      std::cout << message << std::endl;
-                                  },
-                                  nullptr);
-
-        device.SetUncapturedErrorCallback([](WGPUErrorType type, char const *message, void *) {
-                                              std::cerr << message << std::endl;
-                                          },
-                                          nullptr);
-
         SetupSwapChain(surface);
     }
 
@@ -156,6 +135,28 @@ public:
         wgpu::InstanceDescriptor desc = {};
         desc.nextInChain = nullptr;
         instance = wgpu::CreateInstance(&desc);
+
+
+        std::promise<void> devicePromise;
+
+        std::ignore = std::async(std::launch::async, [&devicePromise]() {
+            GetDevice([&](wgpu::Device device) {
+                std::cout << "Device created\n";
+                CppLyricsGLFWVulkanWindow::device = device;
+                devicePromise.set_value();
+            });
+        });
+
+        devicePromise.get_future().wait();
+        device.SetLoggingCallback([](WGPULoggingType type, char const *message, void *) {
+                                      std::cout << message << std::endl;
+                                  },
+                                  nullptr);
+
+        device.SetUncapturedErrorCallback([](WGPUErrorType type, char const *message, void *) {
+                                              std::cerr << message << std::endl;
+                                          },
+                                          nullptr);
     }
 
     explicit CppLyricsGLFWVulkanWindow(const CppLyricsGLFWVulkanWindow &cppLyricsGLFWWindow) = delete;
